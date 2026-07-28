@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+/* ── Estilo Repertorio: cálido, tipo cancionero ──────────── */
+:root {
+  /* Light mode */
+  --bg:    #fbf4e4;
+  --s1:    #ffffff;
+  --s2:    #f3e9d2;
+  --s3:    #eadfc2;
+  --s1h:   #fdf8ed;
+  --br:    #e0d2ac;
+  --br2:   #ecdfbf;
+  --t1:    #241d12;
+  --t2:    #5a4c34;
+  --t3:    #8f7f61;
+  --t4:    #c9b896;
+  --input-bg:     #f3e9d2;
+  --input-border: #e0d2ac;
+  --nav-bg:       rgba(255,255,255,0.92);
+  --shadow:       0 2px 16px rgba(36,29,18,0.10);
+}
+
+.dark {
+  /* Dark mode — pensado para modo presentación en escenario */
+  --bg:    #14110c;
+  --s1:    #1e1810;
+  --s2:    #241d14;
+  --s3:    #2c2418;
+  --s1h:   #1c160f;
+  --br:    #3a2f1f;
+  --br2:   #2c2418;
+  --t1:    #f5ecdb;
+  --t2:    #c9b896;
+  --t3:    #8f7f61;
+  --t4:    #4a3f2c;
+  --input-bg:     #241d14;
+  --input-border: #3a2f1f;
+  --nav-bg:       rgba(20,17,12,0.93);
+  --shadow:       0 4px 28px rgba(0,0,0,0.6);
+}
+
+/* Exponer como colores Tailwind */
+@theme inline {
+  --color-bg:   var(--bg);
+  --color-s1:   var(--s1);
+  --color-s2:   var(--s2);
+  --color-s3:   var(--s3);
+  --color-s1h:  var(--s1h);
+  --color-br:   var(--br);
+  --color-br2:  var(--br2);
+  --color-t1:   var(--t1);
+  --color-t2:   var(--t2);
+  --color-t3:   var(--t3);
+  --color-t4:   var(--t4);
+
+  /* Acento ámbar */
+  --color-accent-300: #f3c876;
+  --color-accent-400: #edb655;
+  --color-accent-500: #e8a33d;
+  --color-accent-600: #c6822a;
+  --color-accent-700: #a06621;
+}
+
+/* ── Base ───────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--bg);
+  color: var(--t1);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100%;
+  position: relative;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+input, select, textarea { outline: none; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--br); border-radius: 2px; }
+
+/* ── Componentes compartidos ────────────────────────────── */
+/* En @layer components para que las utilidades de Tailwind (ej. pl-9) puedan
+   sobreescribir estos estilos — fuera de un @layer, siempre ganarían aunque
+   las utilidades tengan mayor especificidad o vengan después en el archivo. */
+@layer components {
+  .input-base {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    color: var(--t1);
+    font-size: 14px;
+    transition: border-color 0.15s;
+  }
+  .input-base:focus { border-color: var(--color-accent-500); }
+  .input-base::placeholder { color: var(--t4); }
+  select.input-base { cursor: pointer; }
+  .input-base option { background: var(--s1); color: var(--t1); }
+
+  .field-label {
+    display: block;
+    font-size: 11px;
+    color: var(--t3);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .card {
+    background: var(--s1);
+    border: 1px solid var(--br);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  /* Acorde renderizado sobre la letra (formato ChordPro) */
+  .chord-token {
+    color: var(--color-accent-500);
+    font-weight: 700;
+    font-size: 0.85em;
+  }
+}
