@@ -22,3 +22,8 @@ export function markSetlistCurrent(pin: string, id: string) {
 export function markSetlistPlayed(pin: string, id: string) {
   return apiPost<{ ok: true }>('/api/mark-setlist-played', { pin, id })
 }
+
+/** Elimina un setlist. Requiere el PIN de admin. */
+export function deleteSetlist(pin: string, id: string) {
+  return apiPost<{ ok: true }>('/api/delete-setlist', { pin, id })
+}
