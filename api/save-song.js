@@ -1,23 +1,17 @@
-const { json, parseBody, normalizeTitle } = require('./utils/http')
-const { admin, initFirebase } = require('./utils/db')
+const { send, normalizeTitle } = require('./_utils/http')
+const { admin, initFirebase } = require('./_utils/db')
 
 const OPTIONAL_FIELDS = ['artist', 'youtubeUrl', 'spotifyUrl']
 
-exports.handler = async event => {
-  if (event.httpMethod !== 'POST') return json(405, { error: 'Method not allowed' })
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' })
 
-  let body
-  try {
-    body = parseBody(event)
-  } catch {
-    return json(400, { error: 'JSON inválido' })
-  }
-
-  if (!body.pin || body.pin !== process.env.ADMIN_PIN) return json(403, { error: 'PIN inválido' })
+  const body = req.body || {}
+  if (!body.pin || body.pin !== process.env.ADMIN_PIN) return send(res, 403, { error: 'PIN inválido' })
 
   const { id, title, originalKey, chordProText } = body
   if (!title?.trim() || !originalKey?.trim() || !chordProText?.trim()) {
-    return json(400, { error: 'Faltan campos requeridos (título, tono, letra/acordes)' })
+    return send(res, 400, { error: 'Faltan campos requeridos (título, tono, letra/acordes)' })
   }
 
   const db = initFirebase()
@@ -64,5 +58,5 @@ exports.handler = async event => {
     await batch.commit()
   }
 
-  return json(200, { id: songId })
+  send(res, 200, { id: songId })
 }

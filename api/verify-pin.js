@@ -1,16 +1,9 @@
-const { json, parseBody } = require('./utils/http')
+const { send } = require('./_utils/http')
 
-exports.handler = async event => {
-  if (event.httpMethod !== 'POST') return json(405, { error: 'Method not allowed' })
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' })
 
-  let body
-  try {
-    body = parseBody(event)
-  } catch {
-    return json(400, { error: 'JSON inválido' })
-  }
-
-  const { pin } = body
+  const { pin } = req.body || {}
   const adminPin = process.env.ADMIN_PIN
   const userPin = process.env.USER_PIN
 
@@ -22,5 +15,5 @@ exports.handler = async event => {
   // hacer poco práctico un ataque de fuerza bruta contra el PIN.
   await new Promise(resolve => setTimeout(resolve, 400))
 
-  return json(200, { role })
+  send(res, 200, { role })
 }

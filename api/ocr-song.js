@@ -1,5 +1,5 @@
-const { json, parseBody } = require('./utils/http')
-const { initFirebase } = require('./utils/db')
+const { send } = require('./_utils/http')
+const { initFirebase } = require('./_utils/db')
 
 // Alias "-latest" en vez de versiones fijas — Google retira modelos viejos para
 // llaves nuevas con cierta frecuencia (ej. gemini-2.5-flash dejó de estar disponible
@@ -100,23 +100,17 @@ async function callGemini(model, apiKey, prompt, images) {
   return JSON.parse(text)
 }
 
-exports.handler = async event => {
-  if (event.httpMethod !== 'POST') return json(405, { error: 'Method not allowed' })
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' })
 
-  let body
-  try {
-    body = parseBody(event)
-  } catch {
-    return json(400, { error: 'JSON inválido' })
-  }
-
-  if (!body.pin || body.pin !== process.env.ADMIN_PIN) return json(403, { error: 'PIN inválido' })
+  const body = req.body || {}
+  if (!body.pin || body.pin !== process.env.ADMIN_PIN) return send(res, 403, { error: 'PIN inválido' })
 
   const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) return json(500, { error: 'Falta configurar GEMINI_API_KEY' })
+  if (!apiKey) return send(res, 500, { error: 'Falta configurar GEMINI_API_KEY' })
 
   const rawImages = Array.isArray(body.images) ? body.images : []
-  if (rawImages.length === 0) return json(400, { error: 'No se recibió ninguna foto' })
+  if (rawImages.length === 0) return send(res, 400, { error: 'No se recibió ninguna foto' })
 
   // el cliente manda data URLs completos ("data:image/jpeg;base64,...."); Gemini solo quiere el base64 puro
   const images = rawImages.map(img => {
@@ -139,7 +133,7 @@ exports.handler = async event => {
   for (const model of MODELS) {
     try {
       const result = await callGemini(model, apiKey, prompt, images)
-      return json(200, result)
+      return send(res, 200, result)
     } catch (err) {
       lastError = err
       // solo reintenta con el siguiente modelo si fue un error transitorio (rate limit / servidor)
@@ -147,5 +141,5 @@ exports.handler = async event => {
     }
   }
 
-  return json(502, { error: `No se pudo procesar la foto: ${lastError?.message || 'error desconocido'}` })
+  send(res, 502, { error: `No se pudo procesar la foto: ${lastError?.message || 'error desconocido'}` })
 }

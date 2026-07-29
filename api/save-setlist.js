@@ -1,22 +1,16 @@
-const { json, parseBody } = require('./utils/http')
-const { initFirebase } = require('./utils/db')
+const { send } = require('./_utils/http')
+const { initFirebase } = require('./_utils/db')
 
-exports.handler = async event => {
-  if (event.httpMethod !== 'POST') return json(405, { error: 'Method not allowed' })
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' })
 
-  let body
-  try {
-    body = parseBody(event)
-  } catch {
-    return json(400, { error: 'JSON inválido' })
-  }
-
-  if (!body.pin || body.pin !== process.env.ADMIN_PIN) return json(403, { error: 'PIN inválido' })
+  const body = req.body || {}
+  if (!body.pin || body.pin !== process.env.ADMIN_PIN) return send(res, 403, { error: 'PIN inválido' })
 
   const { id, name, date } = body
   const songs = Array.isArray(body.songs) ? body.songs : []
   if (!name?.trim() || !date?.trim()) {
-    return json(400, { error: 'Faltan campos requeridos (nombre, fecha)' })
+    return send(res, 400, { error: 'Faltan campos requeridos (nombre, fecha)' })
   }
 
   const cleanSongs = songs
@@ -42,5 +36,5 @@ exports.handler = async event => {
     setlistId = ref.id
   }
 
-  return json(200, { id: setlistId })
+  send(res, 200, { id: setlistId })
 }
