@@ -1,11 +1,13 @@
 const { send } = require('./_utils/http')
+const { initFirebase } = require('./_utils/db')
+const { getAccessConfig } = require('./_utils/access')
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' })
 
   const { pin } = req.body || {}
-  const adminPin = process.env.ADMIN_PIN
-  const userPin = process.env.USER_PIN
+  const db = initFirebase()
+  const { adminPin, userPin } = await getAccessConfig(db)
 
   let role = null
   if (adminPin && pin === adminPin) role = 'admin'

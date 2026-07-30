@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, Plus, Star, TrendingUp, TriangleAlert } from 'lucide-react'
+import { CalendarDays, Plus, Settings, Star, TrendingUp, TriangleAlert } from 'lucide-react'
 import Layout from '../../components/layout/Layout'
 import BottomSheet from '../../components/ui/BottomSheet'
 import SwipeToDelete from '../../components/SwipeToDelete'
@@ -50,9 +50,14 @@ export default function AdminDashboard() {
     <Layout
       title="Admin"
       headerRight={
-        <Link to="/admin/setlists/nuevo" className="w-9 h-9 rounded-full bg-accent-500 flex items-center justify-center text-black">
-          <Plus size={18} />
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link to="/admin/configuracion" className="w-9 h-9 rounded-full bg-s2 border border-br flex items-center justify-center text-t1">
+            <Settings size={16} />
+          </Link>
+          <Link to="/admin/setlists/nuevo" className="w-9 h-9 rounded-full bg-accent-500 flex items-center justify-center text-black">
+            <Plus size={18} />
+          </Link>
+        </div>
       }
     >
       <div className="pt-3 space-y-5 pb-6">
