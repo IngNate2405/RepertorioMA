@@ -1,5 +1,6 @@
 const { send } = require('./_utils/http')
 const { initFirebase } = require('./_utils/db')
+const { getAccessConfig } = require('./_utils/access')
 
 // Alias "-latest" en vez de versiones fijas — Google retira modelos viejos para
 // llaves nuevas con cierta frecuencia (ej. gemini-2.5-flash dejó de estar disponible
@@ -104,7 +105,9 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' })
 
   const body = req.body || {}
-  if (!body.pin || body.pin !== process.env.ADMIN_PIN) return send(res, 403, { error: 'PIN inválido' })
+  const db = initFirebase()
+  const config = await getAccessConfig(db)
+  if (!body.pin || body.pin !== config.adminPin) return send(res, 403, { error: 'PIN inválido' })
 
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) return send(res, 500, { error: 'Falta configurar GEMINI_API_KEY' })
@@ -120,7 +123,6 @@ module.exports = async (req, res) => {
 
   let exampleText = null
   try {
-    const db = initFirebase()
     const snap = await db.collection('songs').orderBy('updatedAt', 'desc').limit(1).get()
     if (!snap.empty) exampleText = snap.docs[0].data().chordProText
   } catch {

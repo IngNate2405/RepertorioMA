@@ -1,11 +1,14 @@
 const { send } = require('./_utils/http')
 const { initFirebase } = require('./_utils/db')
+const { getAccessConfig } = require('./_utils/access')
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' })
 
   const body = req.body || {}
-  if (!body.pin || body.pin !== process.env.ADMIN_PIN) return send(res, 403, { error: 'PIN inválido' })
+  const db = initFirebase()
+  const config = await getAccessConfig(db)
+  if (!body.pin || body.pin !== config.adminPin) return send(res, 403, { error: 'PIN inválido' })
 
   const { id, name, date } = body
   const songs = Array.isArray(body.songs) ? body.songs : []
@@ -23,7 +26,6 @@ module.exports = async (req, res) => {
       return entry
     })
 
-  const db = initFirebase()
   const data = { name: name.trim(), date: date.trim(), songs: cleanSongs }
 
   let setlistId = id
