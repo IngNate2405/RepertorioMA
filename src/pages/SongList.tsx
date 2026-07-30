@@ -6,28 +6,35 @@ import BottomSheet from '../components/ui/BottomSheet'
 import SwipeToDelete from '../components/SwipeToDelete'
 import { listenSongs } from '../firebase/songService'
 import { deleteSong } from '../firebase/songMutations'
+import { listenTags } from '../firebase/tagService'
 import { normalizeTitle } from '../lib/text'
 import { useRole } from '../contexts/RoleContext'
-import type { Song } from '../types'
+import type { Song, Tag } from '../types'
 
 export default function SongList() {
   const { role, pin } = useRole()
   const navigate = useNavigate()
   const [songs, setSongs] = useState<Song[] | null>(null)
+  const [tags, setTags] = useState<Tag[]>([])
   const [search, setSearch] = useState('')
+  const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
   const [songToDelete, setSongToDelete] = useState<Song | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => listenSongs(setSongs), [])
+  useEffect(() => listenTags(setTags), [])
 
   const filtered = useMemo(() => {
     if (!songs) return []
     const q = normalizeTitle(search)
-    if (!q) return songs
-    return songs.filter(s => normalizeTitle(s.title).includes(q) || (s.artist && normalizeTitle(s.artist).includes(q)))
-  }, [songs, search])
+    return songs.filter(s => {
+      const matchesQuery = !q || normalizeTitle(s.title).includes(q) || (s.artist && normalizeTitle(s.artist).includes(q))
+      const matchesTag = !tagFilter || s.tagId === tagFilter
+      return matchesQuery && matchesTag
+    })
+  }, [songs, search, tagFilter])
 
   async function confirmDelete() {
     if (!pin || !songToDelete) return
@@ -67,6 +74,34 @@ export default function SongList() {
             onChange={e => setSearch(e.target.value)}
           />
         </div>
+
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            <button
+              onClick={() => setTagFilter(null)}
+              className={`rounded-full px-3 py-1 text-xs font-medium border ${
+                tagFilter === null ? 'bg-accent-500 border-accent-500 text-black' : 'bg-s2 border-br text-t2'
+              }`}
+            >
+              Todas
+            </button>
+            {tags.map(tag => {
+              const selected = tag.id === tagFilter
+              return (
+                <button
+                  key={tag.id}
+                  onClick={() => setTagFilter(selected ? null : tag.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium border ${
+                    selected ? 'bg-accent-500 border-accent-500 text-black' : 'bg-s2 border-br text-t2'
+                  }`}
+                >
+                  {tag.name}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {role === 'admin' && filtered.length > 0 && (
           <p className="text-[11px] text-t3 mt-2 px-1">Desliza una canción hacia la izquierda para eliminarla.</p>
         )}
@@ -78,7 +113,7 @@ export default function SongList() {
 
       {songs !== null && filtered.length === 0 && (
         <div className="pt-10 text-center text-t3 text-sm">
-          {search ? 'No se encontraron canciones.' : 'Todavía no hay canciones registradas.'}
+          {search || tagFilter ? 'No se encontraron canciones.' : 'Todavía no hay canciones registradas.'}
         </div>
       )}
 

@@ -8,10 +8,11 @@ export interface SaveSongInput {
   chordProText: string
   youtubeUrl?: string
   spotifyUrl?: string
+  tagId?: string
   photos?: { base64: string; page: number }[]
 }
 
-/** Crea o actualiza una canción. Requiere el PIN de admin — pasa por una función Netlify con firebase-admin. */
+/** Crea o actualiza una canción. Requiere el PIN de admin — pasa por una función serverless con firebase-admin. */
 export function saveSong(pin: string, input: SaveSongInput) {
   return apiPost<{ id: string }>('/api/save-song', { pin, ...input })
 }

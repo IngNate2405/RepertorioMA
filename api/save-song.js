@@ -1,20 +1,22 @@
 const { send, normalizeTitle } = require('./_utils/http')
 const { admin, initFirebase } = require('./_utils/db')
+const { getAccessConfig } = require('./_utils/access')
 
-const OPTIONAL_FIELDS = ['artist', 'youtubeUrl', 'spotifyUrl']
+const OPTIONAL_FIELDS = ['artist', 'youtubeUrl', 'spotifyUrl', 'tagId']
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' })
 
   const body = req.body || {}
-  if (!body.pin || body.pin !== process.env.ADMIN_PIN) return send(res, 403, { error: 'PIN inválido' })
+  const db = initFirebase()
+  const config = await getAccessConfig(db)
+  if (!body.pin || body.pin !== config.adminPin) return send(res, 403, { error: 'PIN inválido' })
 
   const { id, title, originalKey, chordProText } = body
   if (!title?.trim() || !originalKey?.trim() || !chordProText?.trim()) {
     return send(res, 400, { error: 'Faltan campos requeridos (título, tono, letra/acordes)' })
   }
 
-  const db = initFirebase()
   const now = new Date().toISOString()
 
   const data = {

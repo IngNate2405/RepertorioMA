@@ -23,5 +23,9 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+    match /tags/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
   }
 }

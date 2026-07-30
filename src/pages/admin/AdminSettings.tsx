@@ -1,7 +1,100 @@
 import { useEffect, useState } from 'react'
+import { Plus, Trash2 } from 'lucide-react'
 import Layout from '../../components/layout/Layout'
 import { getPins, updatePins } from '../../firebase/accessMutations'
+import { listenTags } from '../../firebase/tagService'
+import { saveTags } from '../../firebase/tagMutations'
 import { useRole } from '../../contexts/RoleContext'
+import type { Tag } from '../../types'
+
+function newTagId() {
+  return crypto.randomUUID()
+}
+
+function TagsSection({ pin }: { pin: string | null }) {
+  const [tags, setTags] = useState<Tag[] | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+
+  useEffect(() => listenTags(loaded => setTags(prev => (prev === null ? loaded : prev))), [])
+
+  function updateName(id: string, name: string) {
+    setTags(prev => (prev ? prev.map(t => (t.id === id ? { ...t, name } : t)) : prev))
+    setSuccess(false)
+  }
+
+  function addTag() {
+    setTags(prev => [...(prev ?? []), { id: newTagId(), name: '' }])
+    setSuccess(false)
+  }
+
+  function removeTag(id: string) {
+    setTags(prev => (prev ? prev.filter(t => t.id !== id) : prev))
+    setSuccess(false)
+  }
+
+  async function handleSave() {
+    if (!pin || !tags) return
+    setError('')
+    setSaving(true)
+    try {
+      await saveTags(pin, tags)
+      setSuccess(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudieron guardar las etiquetas')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="space-y-3 pt-2 border-t border-br2">
+      <div>
+        <label className="field-label">Etiquetas de canciones</label>
+        <p className="text-[11px] text-t3 mt-1">Ej. Adoración, Alabanza — se usan para clasificar y filtrar canciones.</p>
+      </div>
+
+      {tags === null ? (
+        <div className="text-center text-t3 text-sm py-2">Cargando…</div>
+      ) : (
+        <div className="space-y-2">
+          {tags.map(tag => (
+            <div key={tag.id} className="flex items-center gap-2">
+              <input
+                className="input-base"
+                value={tag.name}
+                onChange={e => updateName(tag.id, e.target.value)}
+                placeholder="Nombre de la etiqueta"
+              />
+              <button onClick={() => removeTag(tag.id)} className="text-t4 shrink-0" aria-label="Quitar etiqueta">
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+          {tags.length === 0 && (
+            <p className="text-xs text-t3 text-center py-2">Todavía no hay etiquetas.</p>
+          )}
+        </div>
+      )}
+
+      <button onClick={addTag} disabled={tags === null} className="flex items-center gap-1 text-xs text-accent-500 font-medium">
+        <Plus size={13} /> Agregar etiqueta
+      </button>
+
+      {error && <p className="text-sm text-red-400">{error}</p>}
+      {success && <p className="text-sm text-accent-500">Etiquetas actualizadas.</p>}
+
+      <button
+        onClick={handleSave}
+        disabled={tags === null || saving}
+        className="w-full rounded-xl bg-s2 border border-br text-t1 font-semibold py-2.5 disabled:opacity-50"
+      >
+        {saving ? 'Guardando…' : 'Guardar etiquetas'}
+      </button>
+    </div>
+  )
+}
 
 export default function AdminSettings() {
   const { pin, login } = useRole()
@@ -83,6 +176,8 @@ export default function AdminSettings() {
         >
           {saving ? 'Guardando…' : 'Guardar cambios'}
         </button>
+
+        <TagsSection pin={pin} />
       </div>
     </Layout>
   )

@@ -7,10 +7,16 @@ export interface Song {
   chordProText: string
   youtubeUrl?: string
   spotifyUrl?: string
+  tagId?: string
   timesPlayed: number
   lastPlayedAt?: string
   createdAt: string
   updatedAt: string
+}
+
+export interface Tag {
+  id: string
+  name: string
 }
 
 export interface SongPhoto {

@@ -5,9 +5,11 @@ import ChordSheetEditor from '../../components/ChordSheetEditor'
 import ImageLightbox from '../../components/ImageLightbox'
 import { listenSong, findSongByNormalizedTitle } from '../../firebase/songService'
 import { saveSong } from '../../firebase/songMutations'
+import { listenTags } from '../../firebase/tagService'
 import { normalizeTitle } from '../../lib/text'
 import { parseChordSheet, serializeChordSheet } from '../../lib/chordpro'
 import { useRole } from '../../contexts/RoleContext'
+import type { Tag } from '../../types'
 
 interface ScanPrefill {
   title?: string
@@ -31,7 +33,11 @@ export default function SongEditor() {
   const [chordProText, setChordProText] = useState(prefill?.chordProText ?? '')
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [spotifyUrl, setSpotifyUrl] = useState('')
+  const [tagId, setTagId] = useState<string | undefined>(undefined)
+  const [tags, setTags] = useState<Tag[]>([])
   const [scannedPhotos] = useState(prefill?.photos ?? [])
+
+  useEffect(() => listenTags(setTags), [])
 
   const [duplicate, setDuplicate] = useState<{ id: string; title: string } | null>(null)
   const [saving, setSaving] = useState(false)
@@ -55,6 +61,7 @@ export default function SongEditor() {
         setChordProText(serializeChordSheet(parseChordSheet(song.chordProText)))
         setYoutubeUrl(song.youtubeUrl ?? '')
         setSpotifyUrl(song.spotifyUrl ?? '')
+        setTagId(song.tagId)
         setLoaded(true)
       }
     })
@@ -79,6 +86,7 @@ export default function SongEditor() {
         chordProText,
         youtubeUrl: youtubeUrl.trim(),
         spotifyUrl: spotifyUrl.trim(),
+        tagId: tagId ?? '',
         photos: scannedPhotos.length > 0 ? scannedPhotos : undefined,
       })
       navigate(`/canciones/${savedId}`, { replace: true })
@@ -124,6 +132,28 @@ export default function SongEditor() {
             <input className="input-base" value={originalKey} onChange={e => setOriginalKey(e.target.value)} placeholder="D#" />
           </div>
         </div>
+
+        {tags.length > 0 && (
+          <div>
+            <label className="field-label mb-1">Etiqueta</label>
+            <div className="flex flex-wrap gap-1.5">
+              {tags.map(tag => {
+                const selected = tag.id === tagId
+                return (
+                  <button
+                    key={tag.id}
+                    onClick={() => setTagId(selected ? undefined : tag.id)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium border ${
+                      selected ? 'bg-accent-500 border-accent-500 text-black' : 'bg-s2 border-br text-t2'
+                    }`}
+                  >
+                    {tag.name}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-2">
           <div className="flex-1">
