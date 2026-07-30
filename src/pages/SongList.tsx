@@ -37,6 +37,7 @@ export default function SongList() {
   }, [songs, search, tagFilter])
 
   const tagsById = useMemo(() => new Map(tags.map(t => [t.id, t.name])), [tags])
+  const hasFilter = Boolean(search.trim() || tagFilter)
 
   async function confirmDelete() {
     if (!pin || !songToDelete) return
@@ -104,8 +105,16 @@ export default function SongList() {
           </div>
         )}
 
+        {songs !== null && songs.length > 0 && (
+          <p className="text-[11px] text-t3 mt-2 px-1">
+            {hasFilter
+              ? `${filtered.length} de ${songs.length} canción${songs.length === 1 ? '' : 'es'}`
+              : `${songs.length} canción${songs.length === 1 ? '' : 'es'} en total`}
+          </p>
+        )}
+
         {role === 'admin' && filtered.length > 0 && (
-          <p className="text-[11px] text-t3 mt-2 px-1">Desliza una canción hacia la izquierda para eliminarla.</p>
+          <p className="text-[11px] text-t3 mt-1 px-1">Desliza una canción hacia la izquierda para eliminarla.</p>
         )}
       </div>
 
