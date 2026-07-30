@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Camera, X } from 'lucide-react'
 import Layout from '../../components/layout/Layout'
@@ -21,10 +21,14 @@ export default function ScanSong() {
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
 
+  function addFiles(newFiles: File[]) {
+    const combined = [...files, ...newFiles].slice(0, 2)
+    setFiles(combined)
+    setPreviews(combined.map(f => URL.createObjectURL(f)))
+  }
+
   function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = Array.from(e.target.files ?? []).slice(0, 2)
-    setFiles(selected)
-    setPreviews(selected.map(f => URL.createObjectURL(f)))
+    addFiles(Array.from(e.target.files ?? []))
     e.target.value = ''
   }
 
@@ -32,6 +36,28 @@ export default function ScanSong() {
     setFiles(files.filter((_, i) => i !== index))
     setPreviews(previews.filter((_, i) => i !== index))
   }
+
+  // Permite pegar una imagen copiada al portapapeles (Ctrl+V / Cmd+V) en vez
+  // de tener que guardarla como archivo primero.
+  useEffect(() => {
+    function handlePaste(e: ClipboardEvent) {
+      const items = e.clipboardData?.items
+      if (!items) return
+      const imageFiles: File[] = []
+      for (const item of items) {
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          const file = item.getAsFile()
+          if (file) imageFiles.push(file)
+        }
+      }
+      if (imageFiles.length > 0) {
+        e.preventDefault()
+        addFiles(imageFiles)
+      }
+    }
+    window.addEventListener('paste', handlePaste)
+    return () => window.removeEventListener('paste', handlePaste)
+  }, [files])
 
   async function handleProcess() {
     if (!pin || files.length === 0) return
@@ -80,6 +106,7 @@ export default function ScanSong() {
           >
             <Camera size={26} />
             <span className="text-xs">Toca para elegir foto(s)</span>
+            <span className="text-[11px] text-t4">o pega una imagen copiada (Ctrl+V)</span>
           </button>
         ) : (
           <div className="grid grid-cols-2 gap-2">
