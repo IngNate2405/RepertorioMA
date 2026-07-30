@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, type ComponentType, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useRole } from './contexts/RoleContext'
 import PinGate from './pages/PinGate'
@@ -7,13 +7,34 @@ import SongList from './pages/SongList'
 import SongDetail from './pages/SongDetail'
 import Presentation from './pages/Presentation'
 
+// El service worker se auto-actualiza (skipWaiting + clientsClaim en sw.ts), así
+// que una pestaña que quedó abierta desde antes de un deploy sigue teniendo en
+// memoria el bundle viejo, con referencias a nombres de chunk que ya no existen
+// en el servidor tras el deploy nuevo — el import() dinámico de esas rutas
+// admin falla con "Failed to fetch dynamically imported module". La solución
+// estándar es recargar la página una vez ante ese fallo específico: index.html
+// se vuelve a pedir fresco y ya apunta a los chunks correctos.
+function lazyWithReload<T extends { default: ComponentType<unknown> }>(factory: () => Promise<T>) {
+  return lazy(() =>
+    factory().catch(err => {
+      const key = 'repertorio_chunk_reload'
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1')
+        window.location.reload()
+        return new Promise<T>(() => {})
+      }
+      throw err
+    })
+  )
+}
+
 // Rutas de admin en su propio chunk — los músicos que solo ven el repertorio
 // nunca las necesitan, así que no deben pesar en la carga inicial.
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
-const SongEditor = lazy(() => import('./pages/admin/SongEditor'))
-const ScanSong = lazy(() => import('./pages/admin/ScanSong'))
-const SetlistEditor = lazy(() => import('./pages/admin/SetlistEditor'))
-const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
+const AdminDashboard = lazyWithReload(() => import('./pages/admin/AdminDashboard'))
+const SongEditor = lazyWithReload(() => import('./pages/admin/SongEditor'))
+const ScanSong = lazyWithReload(() => import('./pages/admin/ScanSong'))
+const SetlistEditor = lazyWithReload(() => import('./pages/admin/SetlistEditor'))
+const AdminSettings = lazyWithReload(() => import('./pages/admin/AdminSettings'))
 
 function RequireRole({ children, admin }: { children: ReactNode; admin?: boolean }) {
   const { role } = useRole()
@@ -39,6 +60,14 @@ function LazyAdmin({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    // Si llegamos hasta acá sin recargar, la sesión está sana — libera el
+    // "permiso de recarga" para que un deploy futuro en esta misma pestaña
+    // también pueda auto-recuperarse (y no solo el primero).
+    const t = setTimeout(() => sessionStorage.removeItem('repertorio_chunk_reload'), 5000)
+    return () => clearTimeout(t)
+  }, [])
+
   return (
     <BrowserRouter>
       <Routes>
