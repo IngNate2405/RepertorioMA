@@ -71,7 +71,7 @@ export default function ScanSong() {
           podrás revisar y corregir todo antes de guardar.
         </p>
 
-        <input ref={fileRef} type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={handleFiles} />
+        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} />
 
         {previews.length === 0 ? (
           <button
