@@ -10,6 +10,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Repertorio" />
     <title>Repertorio</title>
+    <script>
+      if (localStorage.getItem('repertorio_dark_mode') === '1') {
+        document.documentElement.classList.add('dark')
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
