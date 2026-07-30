@@ -36,6 +36,8 @@ export default function SongList() {
     })
   }, [songs, search, tagFilter])
 
+  const tagsById = useMemo(() => new Map(tags.map(t => [t.id, t.name])), [tags])
+
   async function confirmDelete() {
     if (!pin || !songToDelete) return
     setDeleting(true)
@@ -119,6 +121,7 @@ export default function SongList() {
 
       <div className="space-y-2">
         {filtered.map(song => {
+          const tagName = song.tagId ? tagsById.get(song.tagId) : undefined
           const row = (
             <Link to={`/canciones/${song.id}`} className="card flex items-center gap-3 px-3 py-3">
               <div className="w-10 h-10 rounded-xl bg-accent-500/15 flex items-center justify-center shrink-0">
@@ -126,7 +129,16 @@ export default function SongList() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-t1 truncate">{song.title}</div>
-                {song.artist && <div className="text-xs text-t3 truncate">{song.artist}</div>}
+                {(song.artist || tagName) && (
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {song.artist && <div className="text-xs text-t3 truncate">{song.artist}</div>}
+                    {tagName && (
+                      <span className="rounded-full px-2 py-0.5 text-[10px] font-medium bg-accent-500/15 text-accent-500 shrink-0">
+                        {tagName}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="text-xs text-t3 shrink-0">{song.originalKey}</div>
             </Link>
