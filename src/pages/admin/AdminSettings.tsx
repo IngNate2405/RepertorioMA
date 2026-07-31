@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Moon, Plus, Sun, Trash2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { LogOut, Moon, Plus, Sun, Trash2 } from 'lucide-react'
 import Layout from '../../components/layout/Layout'
 import { getPins, updatePins } from '../../firebase/accessMutations'
 import { listenTags } from '../../firebase/tagService'
@@ -122,7 +123,8 @@ function DarkModeSection() {
 }
 
 export default function AdminSettings() {
-  const { pin, login } = useRole()
+  const { pin, login, logout } = useRole()
+  const navigate = useNavigate()
   const [adminPin, setAdminPin] = useState('')
   const [userPin, setUserPin] = useState('')
   const [loaded, setLoaded] = useState(false)
@@ -205,6 +207,18 @@ export default function AdminSettings() {
         </button>
 
         <TagsSection pin={pin} />
+
+        <div className="pt-2 border-t border-br2">
+          <button
+            onClick={() => {
+              logout()
+              navigate('/entrar', { replace: true })
+            }}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-s2 border border-br text-red-400 font-medium py-2.5"
+          >
+            <LogOut size={16} /> Cerrar sesión
+          </button>
+        </div>
       </div>
     </Layout>
   )

@@ -1,16 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Music, Play } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { LogOut, Music, Play } from 'lucide-react'
 import Layout from '../components/layout/Layout'
 import { listenCurrentSetlist, listenLastPlayedSetlist } from '../firebase/setlistService'
 import { listenSongs } from '../firebase/songService'
 import { transposeChord } from '../lib/chordpro'
+import { useRole } from '../contexts/RoleContext'
 import type { Setlist, Song } from '../types'
 
 export default function Home() {
+  const { logout } = useRole()
+  const navigate = useNavigate()
   const [current, setCurrent] = useState<Setlist | null | undefined>(undefined)
   const [lastPlayed, setLastPlayed] = useState<Setlist | null | undefined>(undefined)
   const [allSongs, setAllSongs] = useState<Song[]>([])
+
+  function handleLogout() {
+    logout()
+    navigate('/entrar', { replace: true })
+  }
 
   useEffect(() => listenCurrentSetlist(setCurrent), [])
   useEffect(() => listenLastPlayedSetlist(setLastPlayed), [])
@@ -25,7 +33,18 @@ export default function Home() {
   const isFallback = !current && Boolean(lastPlayed)
 
   return (
-    <Layout title="Este domingo">
+    <Layout
+      title="Este domingo"
+      headerRight={
+        <button
+          onClick={handleLogout}
+          className="w-9 h-9 rounded-full bg-s2 border border-br flex items-center justify-center text-t2"
+          aria-label="Cerrar sesión"
+        >
+          <LogOut size={16} />
+        </button>
+      }
+    >
       <div className="pt-3 space-y-3 pb-6">
         {loading && <div className="pt-8 text-center text-t3 text-sm">Cargando…</div>}
 
