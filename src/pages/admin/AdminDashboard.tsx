@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { CalendarDays, Plus, Settings, Star, TrendingUp, TriangleAlert } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { CalendarDays, CalendarPlus, History, Pencil, Plus, Settings, Star, TrendingUp, TriangleAlert } from 'lucide-react'
 import Layout from '../../components/layout/Layout'
 import BottomSheet from '../../components/ui/BottomSheet'
 import SwipeToDelete from '../../components/SwipeToDelete'
 import { listenSetlists } from '../../firebase/setlistService'
 import { listenSongs } from '../../firebase/songService'
 import { deleteSetlist } from '../../firebase/setlistMutations'
+import { nextSunday, previousSunday, formatDateIso, formatDateDMY } from '../../lib/date'
 import { useRole } from '../../contexts/RoleContext'
 import type { Setlist, Song } from '../../types'
 
@@ -18,11 +19,13 @@ const STATUS_LABEL: Record<Setlist['status'], string> = {
 
 export default function AdminDashboard() {
   const { pin } = useRole()
+  const navigate = useNavigate()
   const [setlists, setSetlists] = useState<Setlist[] | null>(null)
   const [songs, setSongs] = useState<Song[]>([])
   const [setlistToDelete, setSetlistToDelete] = useState<Setlist | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [showNewSheet, setShowNewSheet] = useState(false)
 
   useEffect(() => listenSetlists(setSetlists), [])
   useEffect(() => listenSongs(setSongs), [])
@@ -31,6 +34,11 @@ export default function AdminDashboard() {
     () => songs.filter(s => s.timesPlayed > 0).sort((a, b) => b.timesPlayed - a.timesPlayed).slice(0, 5),
     [songs]
   )
+
+  function createForDate(d: Date) {
+    setShowNewSheet(false)
+    navigate('/admin/setlists/nuevo', { state: { name: `Domingo ${formatDateDMY(d)}`, date: formatDateIso(d) } })
+  }
 
   async function confirmDelete() {
     if (!pin || !setlistToDelete) return
@@ -54,9 +62,12 @@ export default function AdminDashboard() {
           <Link to="/admin/configuracion" className="w-9 h-9 rounded-full bg-s2 border border-br flex items-center justify-center text-t1">
             <Settings size={16} />
           </Link>
-          <Link to="/admin/setlists/nuevo" className="w-9 h-9 rounded-full bg-accent-500 flex items-center justify-center text-black">
+          <button
+            onClick={() => setShowNewSheet(true)}
+            className="w-9 h-9 rounded-full bg-accent-500 flex items-center justify-center text-black"
+          >
             <Plus size={18} />
-          </Link>
+          </button>
         </div>
       }
     >
@@ -117,6 +128,44 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {showNewSheet && (
+        <BottomSheet onClose={() => setShowNewSheet(false)}>
+          <div className="p-4 space-y-2">
+            <h2 className="text-sm font-semibold text-t1 px-1 mb-2">Nuevo setlist</h2>
+            <button
+              onClick={() => createForDate(nextSunday())}
+              className="w-full flex items-center gap-3 card px-4 py-3 text-left"
+            >
+              <CalendarPlus size={18} className="text-accent-500" />
+              <div>
+                <div className="text-sm font-medium text-t1">Domingo siguiente</div>
+                <div className="text-xs text-t3">Domingo {formatDateDMY(nextSunday())}</div>
+              </div>
+            </button>
+            <button
+              onClick={() => createForDate(previousSunday())}
+              className="w-full flex items-center gap-3 card px-4 py-3 text-left"
+            >
+              <History size={18} className="text-accent-500" />
+              <div>
+                <div className="text-sm font-medium text-t1">Domingo pasado</div>
+                <div className="text-xs text-t3">Domingo {formatDateDMY(previousSunday())}</div>
+              </div>
+            </button>
+            <button
+              onClick={() => { setShowNewSheet(false); navigate('/admin/setlists/nuevo') }}
+              className="w-full flex items-center gap-3 card px-4 py-3 text-left"
+            >
+              <Pencil size={18} className="text-accent-500" />
+              <div>
+                <div className="text-sm font-medium text-t1">Personalizado</div>
+                <div className="text-xs text-t3">Elige tú el nombre y la fecha</div>
+              </div>
+            </button>
+          </div>
+        </BottomSheet>
+      )}
 
       {setlistToDelete && (
         <BottomSheet onClose={() => (deleting ? undefined : setSetlistToDelete(null))}>

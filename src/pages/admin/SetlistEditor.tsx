@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Check, GripVertical, Minus, Plus, Search, Star, Trash2 } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent,
@@ -61,10 +61,12 @@ export default function SetlistEditor() {
   const isEditing = Boolean(id)
   const { pin } = useRole()
   const navigate = useNavigate()
+  const location = useLocation()
   const loadedRef = useRef(false)
+  const prefill = (location.state as { name?: string; date?: string } | null) ?? null
 
-  const [name, setName] = useState('')
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [name, setName] = useState(prefill?.name ?? '')
+  const [date, setDate] = useState(() => prefill?.date ?? new Date().toISOString().slice(0, 10))
   const [entries, setEntries] = useState<SetlistSongRef[]>([])
   const [status, setStatus] = useState<Setlist['status']>('draft')
   const [allSongs, setAllSongs] = useState<Song[]>([])
