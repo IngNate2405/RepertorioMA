@@ -1,14 +1,18 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { Home, ListMusic, ShieldCheck } from 'lucide-react'
-
-const tabs = [
-  { to: '/canciones', icon: ListMusic, label: 'Canciones' },
-  { to: '/', icon: Home, label: 'Inicio', exact: true },
-  { to: '/admin', icon: ShieldCheck, label: 'Admin' },
-]
+import { Home, ListMusic, Settings, ShieldCheck } from 'lucide-react'
+import { useRole } from '../../contexts/RoleContext'
 
 export default function BottomNav() {
   const location = useLocation()
+  const { role } = useRole()
+
+  const tabs = [
+    { to: '/canciones', icon: ListMusic, label: 'Canciones' },
+    { to: '/', icon: Home, label: 'Inicio', exact: true },
+    role === 'admin'
+      ? { to: '/admin', icon: ShieldCheck, label: 'Admin' }
+      : { to: '/configuracion', icon: Settings, label: 'Configuración' },
+  ]
 
   return (
     <nav

@@ -6,6 +6,7 @@ import Home from './pages/Home'
 import SongList from './pages/SongList'
 import SongDetail from './pages/SongDetail'
 import Presentation from './pages/Presentation'
+import Settings from './pages/Settings'
 
 // El service worker se auto-actualiza (skipWaiting + clientsClaim en sw.ts), así
 // que una pestaña que quedó abierta desde antes de un deploy sigue teniendo en
@@ -76,6 +77,7 @@ export default function App() {
         <Route path="/canciones" element={<RequireRole><SongList /></RequireRole>} />
         <Route path="/canciones/:id" element={<RequireRole><SongDetail /></RequireRole>} />
         <Route path="/setlists/:id/presentar" element={<RequireRole><Presentation /></RequireRole>} />
+        <Route path="/configuracion" element={<RequireRole><Settings /></RequireRole>} />
         <Route path="/admin" element={<LazyAdmin><AdminDashboard /></LazyAdmin>} />
         <Route path="/admin/canciones/escanear" element={<LazyAdmin><ScanSong /></LazyAdmin>} />
         <Route path="/admin/canciones/nueva" element={<LazyAdmin><SongEditor /></LazyAdmin>} />
