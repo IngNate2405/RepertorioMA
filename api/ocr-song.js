@@ -53,8 +53,13 @@ y las mismas estrofas varias veces):
 - Antes de cada bloque, agrega una línea propia con el prefijo "## " seguido de la etiqueta —
   ej. "## Estrofa 1", "## Coro", "## Estrofa 2", "## Puente". Esta línea de etiqueta ocupa una
   sola línea (no es un par de acordes/letra) y va sola, sin línea de letra debajo.
-- Transcribe cada aparición del coro completa (con su letra y acordes), no la abrevies — solo
-  marca cada una con su propia etiqueta "## Coro" para que quede claro cuál es cuál.
+- Si un bloque se repite igual, palabra por palabra y acorde por acorde, más adelante en la
+  canción (típicamente el coro), transcríbelo completo solo la PRIMERA vez que aparece. Las
+  veces siguientes que se repite igual, NO vuelvas a escribir su letra ni sus acordes — omite esa
+  repetición por completo (ni siquiera repitas su etiqueta "## Coro" de nuevo).
+- Si una repetición tiene alguna diferencia real en la letra o los acordes respecto a la primera
+  vez (no una repetición idéntica), sí transcríbela completa con su propia etiqueta — la regla de
+  "una sola vez" aplica solo a repeticiones verdaderamente idénticas.
 - Si no logras distinguir con confianza la estructura, no adivines — es mejor omitir las
   etiquetas que ponerlas mal.
 
