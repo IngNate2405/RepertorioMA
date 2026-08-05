@@ -67,7 +67,7 @@ export default function SongList() {
         )
       }
     >
-      <div className="pt-4 pb-3 sticky top-0 bg-bg">
+      <div className="pt-4 pb-3 sticky top-0 z-10 bg-bg">
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-t4" />
           <input
