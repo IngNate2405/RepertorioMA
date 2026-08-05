@@ -20,7 +20,7 @@ const RESPONSE_SCHEMA = {
 function buildPrompt(exampleText) {
   let prompt = `Eres un músico transcribiendo una hoja de acordes.
 
-Convierte la(s) foto(s) adjuntas (pueden ser 1 o 2 páginas de la misma canción) en texto plano,
+Convierte la(s) foto(s) adjuntas (pueden ser una o varias páginas de la misma canción, en orden) en texto plano,
 tal como se ve en la foto: una línea de acordes posicionados con espacios, seguida inmediatamente
 por su línea de letra correspondiente. Ejemplo — si la foto muestra:
 
@@ -42,7 +42,7 @@ Reglas estrictas:
   correspondiente, aunque quede vacía — nunca omitas la línea de acordes de un par.
 - Para separar estrofas/coros como en la foto, usa un par de líneas completamente vacías (una
   línea de acordes vacía seguida de una línea de letra vacía) — nunca una sola línea vacía suelta.
-- Si la canción tiene 2 páginas, únelas en un solo texto continuo.
+- Si la canción tiene varias páginas, únelas en un solo texto continuo, en el orden en que aparecen.
 - Detecta el título de la canción si aparece escrito; si no aparece, deja el título en blanco.
 - Detecta el tono (la tónica del primer acorde principal de la canción, ej. "D#", "Bm").
 

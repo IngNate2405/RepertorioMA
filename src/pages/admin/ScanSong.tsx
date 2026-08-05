@@ -22,7 +22,7 @@ export default function ScanSong() {
   const [error, setError] = useState('')
 
   function addFiles(newFiles: File[]) {
-    const combined = [...files, ...newFiles].slice(0, 2)
+    const combined = [...files, ...newFiles]
     setFiles(combined)
     setPreviews(combined.map(f => URL.createObjectURL(f)))
   }
@@ -93,8 +93,8 @@ export default function ScanSong() {
     <Layout title="Escanear canción">
       <div className="pt-3 space-y-4 pb-6">
         <p className="text-sm text-t3">
-          Sube 1 o 2 fotos de la hoja de acordes. La IA extraerá el título, el tono y la letra con acordes —
-          podrás revisar y corregir todo antes de guardar.
+          Sube las fotos que necesites de la hoja de acordes (una o varias páginas). La IA extraerá el título,
+          el tono y la letra con acordes — podrás revisar y corregir todo antes de guardar.
         </p>
 
         <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} />
@@ -121,14 +121,12 @@ export default function ScanSong() {
                 </button>
               </div>
             ))}
-            {previews.length < 2 && (
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="aspect-[3/4] rounded-xl border-2 border-dashed border-br flex items-center justify-center text-t3 text-xs"
-              >
-                + página 2
-              </button>
-            )}
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="aspect-[3/4] rounded-xl border-2 border-dashed border-br flex items-center justify-center text-t3 text-xs"
+            >
+              + página {previews.length + 1}
+            </button>
           </div>
         )}
 
