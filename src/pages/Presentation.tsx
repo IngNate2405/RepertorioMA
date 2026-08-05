@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { CaseUpper, ChevronLeft, ChevronRight, Eye, EyeOff, WifiOff, X } from 'lucide-react'
 import ChordProView from '../components/ChordProView'
 import { listenSetlist } from '../firebase/setlistService'
@@ -13,9 +13,11 @@ import type { Setlist, Song } from '../types'
 export default function Presentation() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const [setlist, setSetlist] = useState<Setlist | null | undefined>(undefined)
   const [allSongs, setAllSongs] = useState<Song[]>([])
-  const [index, setIndex] = useState(0)
+  const initialIndex = (location.state as { index?: number } | null)?.index
+  const [index, setIndex] = useState(typeof initialIndex === 'number' ? initialIndex : 0)
   const [hideChords, setHideChords] = useHideChords()
   const [uppercase, setUppercase] = useUppercase()
   const online = useOnlineStatus()
