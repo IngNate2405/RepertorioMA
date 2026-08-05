@@ -11,7 +11,7 @@ function SetlistRow({ setlist, pinned, songMap }: { setlist: Setlist; pinned?: b
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <div className="card overflow-hidden">
+    <div className={`card overflow-hidden ${pinned ? 'card-pinned' : ''}`}>
       <div className="flex items-center gap-2 px-3 py-3">
         <button onClick={() => setExpanded(v => !v)} className="flex-1 min-w-0 flex items-center gap-2 text-left">
           <ChevronDown size={16} className={`text-t3 shrink-0 transition-transform ${expanded ? '' : '-rotate-90'}`} />
@@ -91,7 +91,7 @@ export default function Home() {
   const isEmpty = !loading && !current && past.length === 0 && upcoming.length === 0
 
   return (
-    <Layout title="Inicio">
+    <Layout title="Setlist">
       <div className="pt-3 space-y-4 pb-6">
         {loading && <div className="pt-8 text-center text-t3 text-sm">Cargando…</div>}
 
@@ -99,26 +99,31 @@ export default function Home() {
           <div className="text-center text-t3 text-sm py-10">Todavía no hay setlists creados.</div>
         )}
 
-        {current && <SetlistRow setlist={current} pinned songMap={songMap} />}
-
-        {past.length > 0 && (
-          <div className="space-y-2">
-            <button
-              onClick={() => setShowPast(v => !v)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-t3 uppercase tracking-wide px-1"
-            >
-              <ChevronRight size={12} className={`transition-transform ${showPast ? 'rotate-90' : ''}`} />
-              Setlists anteriores ({past.length})
-            </button>
-            {showPast && (
-              <div className="space-y-2">
-                {past.map(s => (
-                  <SetlistRow key={s.id} setlist={s} songMap={songMap} />
-                ))}
-              </div>
-            )}
+        {current && (
+          <div className="space-y-1.5">
+            <div className="text-xs font-semibold text-t3 uppercase tracking-wide px-1">Setlist para esta semana:</div>
+            <SetlistRow setlist={current} pinned songMap={songMap} />
           </div>
         )}
+
+        <div className="space-y-2">
+          <button
+            onClick={() => setShowPast(v => !v)}
+            className="flex items-center gap-1.5 text-xs font-semibold text-t3 uppercase tracking-wide px-1"
+          >
+            <ChevronRight size={12} className={`transition-transform ${showPast ? 'rotate-90' : ''}`} />
+            Setlists anteriores ({past.length})
+          </button>
+          {showPast && (
+            <div className="space-y-2">
+              {past.length === 0 ? (
+                <p className="text-xs text-t3 px-1">No hay setlists anteriores.</p>
+              ) : (
+                past.map(s => <SetlistRow key={s.id} setlist={s} songMap={songMap} />)
+              )}
+            </div>
+          )}
+        </div>
 
         {upcoming.length > 0 && (
           <div className="space-y-2">

@@ -138,6 +138,12 @@ input, select, textarea { outline: none; }
     box-shadow: var(--shadow);
   }
 
+  /* Setlist fijado (Inicio) — mismo .card pero más notorio, para que se vea que es el principal */
+  .card-pinned {
+    border-color: var(--color-accent-500);
+    box-shadow: 0 6px 24px rgba(232, 163, 61, 0.28), var(--shadow);
+  }
+
   /* Acorde renderizado sobre la letra (formato ChordPro) */
   .chord-token {
     color: var(--color-accent-500);
