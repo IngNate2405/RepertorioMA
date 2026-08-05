@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import Layout from '../../components/layout/Layout'
+import BackButton from '../../components/layout/BackButton'
 import ChordSheetEditor from '../../components/ChordSheetEditor'
 import ImageLightbox from '../../components/ImageLightbox'
 import { listenSong, findSongByNormalizedTitle } from '../../firebase/songService'
@@ -100,7 +101,7 @@ export default function SongEditor() {
   const canSave = title.trim() && originalKey.trim() && chordProText.trim() && !saving
 
   return (
-    <Layout title={isEditing ? 'Editar canción' : 'Nueva canción'}>
+    <Layout title={isEditing ? 'Editar canción' : 'Nueva canción'} headerLeft={<BackButton />}>
       <div className="pt-3 space-y-3 pb-6">
         <div>
           <label className="field-label mb-1">Título</label>

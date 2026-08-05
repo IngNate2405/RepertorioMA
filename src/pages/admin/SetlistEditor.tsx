@@ -7,6 +7,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import Layout from '../../components/layout/Layout'
+import BackButton from '../../components/layout/BackButton'
 import BottomSheet from '../../components/ui/BottomSheet'
 import { listenSetlist } from '../../firebase/setlistService'
 import { listenSongs } from '../../firebase/songService'
@@ -176,7 +177,7 @@ export default function SetlistEditor() {
   const canSave = name.trim() && date.trim() && !saving
 
   return (
-    <Layout title={isEditing ? 'Editar setlist' : 'Nuevo setlist'}>
+    <Layout title={isEditing ? 'Editar setlist' : 'Nuevo setlist'} headerLeft={<BackButton />}>
       <div className="pt-3 space-y-3 pb-6">
         <div>
           <label className="field-label mb-1">Nombre</label>
