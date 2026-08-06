@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { CopyPlus, GripVertical, Plus, Tag, Trash2 } from 'lucide-react'
+import { CopyPlus, GripVertical, Plus, Tag, Trash2, Undo2 } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent,
 } from '@dnd-kit/core'
@@ -127,6 +127,8 @@ export default function ChordSheetEditor({ value, onChange }: Props) {
   })
   const pendingFocus = useRef<string | null>(null)
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+  const historyRef = useRef<EditorRow[][]>([])
+  const [canUndo, setCanUndo] = useState(false)
 
   useEffect(() => {
     if (pendingFocus.current) {
@@ -140,9 +142,27 @@ export default function ChordSheetEditor({ value, onChange }: Props) {
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
   )
 
+  /** Cambios de texto (escribir en un input) — el deshacer nativo del navegador ya cubre esto. */
   function commit(next: EditorRow[]) {
     setRows(next)
     onChange(serializeChordSheet(next))
+  }
+
+  const MAX_HISTORY = 50
+
+  /** Cambios estructurales (borrar/duplicar/reordenar/agregar fila) — sin deshacer nativo, así que quedan en este historial. */
+  function commitStructural(next: EditorRow[]) {
+    historyRef.current.push(rows)
+    if (historyRef.current.length > MAX_HISTORY) historyRef.current.shift()
+    setCanUndo(true)
+    commit(next)
+  }
+
+  function undo() {
+    const prev = historyRef.current.pop()
+    if (!prev) return
+    setCanUndo(historyRef.current.length > 0)
+    commit(prev)
   }
 
   function updateLine(index: number, field: 'chords' | 'lyric', text: string) {
@@ -158,7 +178,7 @@ export default function ChordSheetEditor({ value, onChange }: Props) {
     const id = newId()
     next.splice(index + 1, 0, { type: 'pair', chords: '', lyric: '', id })
     pendingFocus.current = `${id}-chords`
-    commit(next)
+    commitStructural(next)
   }
 
   function addLabelAfter(index: number) {
@@ -166,7 +186,7 @@ export default function ChordSheetEditor({ value, onChange }: Props) {
     const id = newId()
     next.splice(index + 1, 0, { type: 'label', text: '', id })
     pendingFocus.current = `${id}-label`
-    commit(next)
+    commitStructural(next)
   }
 
   function duplicateRow(index: number) {
@@ -176,12 +196,12 @@ export default function ChordSheetEditor({ value, onChange }: Props) {
     const next = [...rows]
     next.splice(index + 1, 0, copy)
     pendingFocus.current = copy.type === 'label' ? `${id}-label` : `${id}-chords`
-    commit(next)
+    commitStructural(next)
   }
 
   function removeRow(index: number) {
     const next = rows.filter((_, i) => i !== index)
-    commit(next.length > 0 ? next : [{ type: 'pair', chords: '', lyric: '', id: newId() }])
+    commitStructural(next.length > 0 ? next : [{ type: 'pair', chords: '', lyric: '', id: newId() }])
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -189,11 +209,20 @@ export default function ChordSheetEditor({ value, onChange }: Props) {
     if (!over || active.id === over.id) return
     const oldIndex = rows.findIndex(r => r.id === active.id)
     const newIndex = rows.findIndex(r => r.id === over.id)
-    commit(arrayMove(rows, oldIndex, newIndex))
+    commitStructural(arrayMove(rows, oldIndex, newIndex))
   }
 
   return (
     <div className="space-y-1.5 font-mono text-xs">
+      <div className="flex justify-end">
+        <button
+          onClick={undo}
+          disabled={!canUndo}
+          className="flex items-center gap-1 text-xs text-t2 font-medium disabled:opacity-30"
+        >
+          <Undo2 size={13} /> Deshacer
+        </button>
+      </div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={rows.map(r => r.id)} strategy={verticalListSortingStrategy}>
           {rows.map((row, i) => (
