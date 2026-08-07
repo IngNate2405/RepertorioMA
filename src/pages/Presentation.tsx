@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { CaseUpper, ChevronLeft, ChevronRight, Eye, EyeOff, WifiOff, X } from 'lucide-react'
 import ChordProView from '../components/ChordProView'
@@ -34,9 +34,28 @@ export default function Presentation() {
   const entry = entries[index]
   const song = entry ? songMap.get(entry.songId) : undefined
 
+  // Navegación en loop: pasada la última canción vuelve a la primera, y viceversa.
   function goTo(next: number) {
-    if (next < 0 || next >= entries.length) return
-    setIndex(next)
+    if (entries.length === 0) return
+    setIndex(((next % entries.length) + entries.length) % entries.length)
+  }
+
+  const SWIPE_THRESHOLD = 60
+  const dragStart = useRef<{ x: number; y: number } | null>(null)
+
+  function handlePointerDown(e: PointerEvent) {
+    dragStart.current = { x: e.clientX, y: e.clientY }
+  }
+
+  function handlePointerUp(e: PointerEvent) {
+    const start = dragStart.current
+    dragStart.current = null
+    if (!start) return
+    const deltaX = e.clientX - start.x
+    const deltaY = e.clientY - start.y
+    if (Math.abs(deltaX) > SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+      goTo(deltaX < 0 ? index + 1 : index - 1)
+    }
   }
 
   if (setlist === undefined || (song === undefined && entries.length > 0 && allSongs.length === 0)) {
@@ -85,7 +104,13 @@ export default function Presentation() {
         </button>
       </div>
 
-      <div className="flex-1 relative overflow-hidden">
+      <div
+        className="flex-1 relative overflow-hidden"
+        style={{ touchAction: 'pan-y' }}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={() => { dragStart.current = null }}
+      >
         {entries.length === 0 && (
           <div className="h-full flex items-center justify-center text-t3 text-sm px-6 text-center">
             Este setlist no tiene canciones.
@@ -108,16 +133,14 @@ export default function Presentation() {
           <>
             <button
               onClick={() => goTo(index - 1)}
-              disabled={index === 0}
-              className="absolute left-0 top-0 bottom-0 w-1/4 flex items-center justify-start pl-1 disabled:opacity-0"
+              className="absolute left-0 top-0 bottom-0 w-1/4 flex items-center justify-start pl-1"
               aria-label="Anterior"
             >
               <ChevronLeft size={22} className="text-t3" />
             </button>
             <button
               onClick={() => goTo(index + 1)}
-              disabled={index === entries.length - 1}
-              className="absolute right-0 top-0 bottom-0 w-1/4 flex items-center justify-end pr-1 disabled:opacity-0"
+              className="absolute right-0 top-0 bottom-0 w-1/4 flex items-center justify-end pr-1"
               aria-label="Siguiente"
             >
               <ChevronRight size={22} className="text-t3" />
