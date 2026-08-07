@@ -128,6 +128,12 @@ export default function ChordSheetEditor({ value, onChange }: Props) {
   const pendingFocus = useRef<string | null>(null)
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const historyRef = useRef<EditorRow[][]>([])
+  // Tecleos seguidos (sin pausa) se agrupan en un solo paso de deshacer, en vez
+  // de crear un paso por cada letra escrita/borrada. Una pausa breve (o cambiar
+  // de campo) cierra el grupo — así "escribir una palabra" y luego, tras dudar,
+  // "borrar algo" quedan en pasos separados y deshacer los distingue.
+  const lastEditRef = useRef<{ key: string; time: number } | null>(null)
+  const EDIT_GROUP_MS = 400
   const [canUndo, setCanUndo] = useState(false)
 
   useEffect(() => {
@@ -142,7 +148,6 @@ export default function ChordSheetEditor({ value, onChange }: Props) {
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
   )
 
-  /** Cambios de texto (escribir en un input) — el deshacer nativo del navegador ya cubre esto. */
   function commit(next: EditorRow[]) {
     setRows(next)
     onChange(serializeChordSheet(next))
@@ -150,27 +155,44 @@ export default function ChordSheetEditor({ value, onChange }: Props) {
 
   const MAX_HISTORY = 50
 
-  /** Cambios estructurales (borrar/duplicar/reordenar/agregar fila) — sin deshacer nativo, así que quedan en este historial. */
-  function commitStructural(next: EditorRow[]) {
+  function pushHistory() {
     historyRef.current.push(rows)
     if (historyRef.current.length > MAX_HISTORY) historyRef.current.shift()
     setCanUndo(true)
+  }
+
+  /** Cambios estructurales (borrar/duplicar/reordenar/agregar fila) — cada uno es su propio paso de deshacer. */
+  function commitStructural(next: EditorRow[]) {
+    pushHistory()
+    lastEditRef.current = null
     commit(next)
   }
 
   function undo() {
     const prev = historyRef.current.pop()
     if (!prev) return
+    lastEditRef.current = null
     setCanUndo(historyRef.current.length > 0)
     commit(prev)
   }
 
+  /** Cambios de texto (escribir en un input) — se agrupan mientras se teclea seguido en el mismo campo; una pausa o cambiar de campo cierra el grupo. */
+  function commitText(key: string, next: EditorRow[]) {
+    const now = Date.now()
+    const last = lastEditRef.current
+    if (!last || last.key !== key || now - last.time > EDIT_GROUP_MS) {
+      pushHistory()
+    }
+    lastEditRef.current = { key, time: now }
+    commit(next)
+  }
+
   function updateLine(index: number, field: 'chords' | 'lyric', text: string) {
-    commit(rows.map((r, i) => (i === index && r.type === 'pair' ? { ...r, [field]: text } : r)))
+    commitText(`${rows[index]?.id}:${field}`, rows.map((r, i) => (i === index && r.type === 'pair' ? { ...r, [field]: text } : r)))
   }
 
   function updateLabel(index: number, text: string) {
-    commit(rows.map((r, i) => (i === index && r.type === 'label' ? { ...r, text } : r)))
+    commitText(`${rows[index]?.id}:label`, rows.map((r, i) => (i === index && r.type === 'label' ? { ...r, text } : r)))
   }
 
   function addLineAfter(index: number) {
