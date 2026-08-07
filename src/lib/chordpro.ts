@@ -162,3 +162,18 @@ export function transposeChordProText(text: string, semitones: number): string {
     items.map(item => (item.type === 'pair' ? { ...item, chords: transposeChordsLine(item.chords, semitones) } : item))
   )
 }
+
+/**
+ * Semitonos para ir de una tonalidad a otra (ej. "C" -> "D" = 2) — solo mira la
+ * nota raíz, la calidad (m, 7, etc.) no afecta la transposición. Devuelve null
+ * si alguna de las dos no se reconoce como nota.
+ */
+export function semitonesBetweenKeys(fromKey: string, toKey: string): number | null {
+  const fromMatch = CHORD_SHAPE.exec(fromKey.trim())
+  const toMatch = CHORD_SHAPE.exec(toKey.trim())
+  if (!fromMatch || !toMatch) return null
+  const fromIndex = NOTE_TO_INDEX[fromMatch[1]]
+  const toIndex = NOTE_TO_INDEX[toMatch[1]]
+  if (fromIndex === undefined || toIndex === undefined) return null
+  return ((toIndex - fromIndex) % 12 + 12) % 12
+}

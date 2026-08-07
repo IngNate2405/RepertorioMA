@@ -4,11 +4,12 @@ import Layout from '../../components/layout/Layout'
 import BackButton from '../../components/layout/BackButton'
 import ChordSheetEditor from '../../components/ChordSheetEditor'
 import ImageLightbox from '../../components/ImageLightbox'
+import { ArrowRightLeft } from 'lucide-react'
 import { listenSong, findSongByNormalizedTitle } from '../../firebase/songService'
 import { saveSong } from '../../firebase/songMutations'
 import { listenTags } from '../../firebase/tagService'
 import { normalizeTitle } from '../../lib/text'
-import { parseChordSheet, serializeChordSheet } from '../../lib/chordpro'
+import { parseChordSheet, serializeChordSheet, semitonesBetweenKeys, transposeChordProText } from '../../lib/chordpro'
 import { useRole } from '../../contexts/RoleContext'
 import type { Tag } from '../../types'
 
@@ -37,6 +38,13 @@ export default function SongEditor() {
   const [tagId, setTagId] = useState<string | undefined>(undefined)
   const [tags, setTags] = useState<Tag[]>([])
   const [scannedPhotos] = useState(prefill?.photos ?? [])
+  // El tono con el que la letra/acordes actuales realmente están escritos — a
+  // veces la foto ya viene transportada a otro tono (ej. una hoja que alguien
+  // ajustó para su voz), así que el tono "real" de la canción puede no ser el
+  // mismo que el que se detectó/cargó. Cuando el admin corrige el campo Tono,
+  // se ofrece transportar la letra para que quede consistente con el tono real.
+  const [chordsKeyBaseline, setChordsKeyBaseline] = useState(prefill?.originalKey ?? '')
+  const [chordEditorKey, setChordEditorKey] = useState(0)
 
   useEffect(() => listenTags(setTags), [])
 
@@ -57,6 +65,7 @@ export default function SongEditor() {
         setTitle(song.title)
         setArtist(song.artist ?? '')
         setOriginalKey(song.originalKey)
+        setChordsKeyBaseline(song.originalKey)
         // Round-trip por parse/serialize migra automáticamente el formato viejo
         // de corchetes si esta canción se guardó antes del cambio de formato.
         setChordProText(serializeChordSheet(parseChordSheet(song.chordProText)))
@@ -67,6 +76,23 @@ export default function SongEditor() {
       }
     })
   }, [id])
+
+  const pendingSemitones = semitonesBetweenKeys(chordsKeyBaseline, originalKey)
+  const showTransposeHint =
+    loaded && originalKey.trim() && chordsKeyBaseline.trim() &&
+    originalKey.trim() !== chordsKeyBaseline.trim() && pendingSemitones !== null && pendingSemitones !== 0
+
+  function applyKeyTranspose() {
+    if (pendingSemitones === null) return
+    setChordProText(prev => transposeChordProText(prev, pendingSemitones))
+    setChordsKeyBaseline(originalKey)
+    setChordEditorKey(k => k + 1)
+  }
+
+  function dismissTransposeHint() {
+    // "No, solo corregí el nombre del tono" — no toca la letra, solo deja de sugerirlo.
+    setChordsKeyBaseline(originalKey)
+  }
 
   async function checkDuplicate() {
     if (isEditing || !title.trim()) return
@@ -134,6 +160,26 @@ export default function SongEditor() {
           </div>
         </div>
 
+        {showTransposeHint && (
+          <div className="flex items-center justify-between gap-2 rounded-xl bg-accent-500/10 px-3 py-2">
+            <p className="text-xs text-t2">
+              Cambiaste el tono de <strong>{chordsKeyBaseline}</strong> a <strong>{originalKey}</strong>. ¿Transportar
+              también los acordes de la letra para que coincidan?
+            </p>
+            <div className="flex flex-col gap-1 shrink-0">
+              <button
+                onClick={applyKeyTranspose}
+                className="flex items-center gap-1 rounded-lg bg-accent-500 text-black text-xs font-semibold px-2.5 py-1.5"
+              >
+                <ArrowRightLeft size={12} /> Transportar
+              </button>
+              <button onClick={dismissTransposeHint} className="text-[11px] text-t3">
+                Solo corregir el nombre
+              </button>
+            </div>
+          </div>
+        )}
+
         {tags.length > 0 && (
           <div>
             <label className="field-label mb-1">Etiqueta</label>
@@ -187,7 +233,7 @@ export default function SongEditor() {
           </p>
           {loaded ? (
             <div className="card p-3">
-              <ChordSheetEditor value={chordProText} onChange={setChordProText} />
+              <ChordSheetEditor key={chordEditorKey} value={chordProText} onChange={setChordProText} />
             </div>
           ) : (
             <div className="card p-4 text-center text-t3 text-sm">Cargando…</div>
