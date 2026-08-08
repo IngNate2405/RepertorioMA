@@ -8,6 +8,7 @@ import { listenSetlists } from '../../firebase/setlistService'
 import { listenSongs } from '../../firebase/songService'
 import { deleteSetlist } from '../../firebase/setlistMutations'
 import { nextSunday, previousSunday, sundayAfter, parseDateIso, formatDateIso, formatDateDMY } from '../../lib/date'
+import { groupSetlists } from '../../lib/setlistGroups'
 import { useRole } from '../../contexts/RoleContext'
 import type { Setlist, Song } from '../../types'
 
@@ -30,15 +31,7 @@ export default function AdminDashboard() {
   useEffect(() => listenSetlists(setSetlists), [])
   useEffect(() => listenSongs(setSongs), [])
 
-  const current = useMemo(() => setlists?.find(s => s.status === 'current') ?? null, [setlists])
-  const past = useMemo(
-    () => (setlists ?? []).filter(s => s.status === 'played').sort((a, b) => b.date.localeCompare(a.date)),
-    [setlists]
-  )
-  const upcoming = useMemo(
-    () => (setlists ?? []).filter(s => s.status === 'draft').sort((a, b) => a.date.localeCompare(b.date)),
-    [setlists]
-  )
+  const { current, past, upcoming } = useMemo(() => groupSetlists(setlists), [setlists])
 
   const topSongs = useMemo(
     () => songs.filter(s => s.timesPlayed > 0).sort((a, b) => b.timesPlayed - a.timesPlayed).slice(0, 5),

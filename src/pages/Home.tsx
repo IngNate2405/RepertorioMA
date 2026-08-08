@@ -5,6 +5,7 @@ import Layout from '../components/layout/Layout'
 import { listenSetlists } from '../firebase/setlistService'
 import { listenSongs } from '../firebase/songService'
 import { transposeChord } from '../lib/chordpro'
+import { groupSetlists } from '../lib/setlistGroups'
 import type { Setlist, Song } from '../types'
 
 function SetlistRow({ setlist, pinned, songMap }: { setlist: Setlist; pinned?: boolean; songMap: Map<string, Song> }) {
@@ -77,15 +78,7 @@ export default function Home() {
 
   const songMap = useMemo(() => new Map(allSongs.map(s => [s.id, s])), [allSongs])
 
-  const current = useMemo(() => setlists?.find(s => s.status === 'current') ?? null, [setlists])
-  const past = useMemo(
-    () => (setlists ?? []).filter(s => s.status === 'played').sort((a, b) => b.date.localeCompare(a.date)),
-    [setlists]
-  )
-  const upcoming = useMemo(
-    () => (setlists ?? []).filter(s => s.status === 'draft').sort((a, b) => a.date.localeCompare(b.date)),
-    [setlists]
-  )
+  const { current, past, upcoming } = useMemo(() => groupSetlists(setlists), [setlists])
 
   const loading = setlists === null
   const isEmpty = !loading && !current && past.length === 0 && upcoming.length === 0
