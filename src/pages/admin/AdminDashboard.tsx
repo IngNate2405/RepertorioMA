@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { CalendarDays, CalendarPlus, History, Pencil, Plus, Settings, Star, TrendingUp, TriangleAlert } from 'lucide-react'
+import { CalendarPlus, History, Pencil, Plus, Settings, TrendingUp, TriangleAlert } from 'lucide-react'
 import Layout from '../../components/layout/Layout'
 import BottomSheet from '../../components/ui/BottomSheet'
-import SwipeToDelete from '../../components/SwipeToDelete'
+import SetlistRow from '../../components/SetlistRow'
 import { listenSetlists } from '../../firebase/setlistService'
 import { listenSongs } from '../../firebase/songService'
 import { deleteSetlist } from '../../firebase/setlistMutations'
@@ -11,12 +11,6 @@ import { nextSunday, previousSunday, sundayAfter, parseDateIso, formatDateIso, f
 import { groupSetlists } from '../../lib/setlistGroups'
 import { useRole } from '../../contexts/RoleContext'
 import type { Setlist, Song } from '../../types'
-
-const STATUS_LABEL: Record<Setlist['status'], string> = {
-  current: 'Actual',
-  draft: 'Borrador',
-  played: 'Tocado',
-}
 
 export default function AdminDashboard() {
   const { pin } = useRole()
@@ -32,6 +26,7 @@ export default function AdminDashboard() {
   useEffect(() => listenSongs(setSongs), [])
 
   const { current, past, upcoming } = useMemo(() => groupSetlists(setlists), [setlists])
+  const songMap = useMemo(() => new Map(songs.map(s => [s.id, s])), [songs])
 
   const topSongs = useMemo(
     () => songs.filter(s => s.timesPlayed > 0).sort((a, b) => b.timesPlayed - a.timesPlayed).slice(0, 5),
@@ -52,24 +47,16 @@ export default function AdminDashboard() {
     navigate('/admin/setlists/nuevo', { state: { name: `Domingo ${formatDateDMY(d)}`, date: formatDateIso(d) } })
   }
 
-  function renderRow(setlist: Setlist) {
+  function renderRow(setlist: Setlist, pinned?: boolean) {
     return (
-      <SwipeToDelete key={setlist.id} onDelete={() => setSetlistToDelete(setlist)}>
-        <Link to={`/admin/setlists/${setlist.id}/editar`} className="card flex items-center gap-3 px-3 py-3">
-          <div className="w-10 h-10 rounded-xl bg-accent-500/15 flex items-center justify-center shrink-0">
-            <CalendarDays size={18} className="text-accent-500" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-t1 truncate">{setlist.name}</div>
-            <div className="text-xs text-t3">{setlist.date} · {setlist.songs.length} canciones</div>
-          </div>
-          {setlist.status === 'current' ? (
-            <Star size={16} className="text-accent-500 shrink-0" />
-          ) : (
-            <span className="text-[10px] text-t3 shrink-0">{STATUS_LABEL[setlist.status]}</span>
-          )}
-        </Link>
-      </SwipeToDelete>
+      <SetlistRow
+        key={setlist.id}
+        setlist={setlist}
+        songMap={songMap}
+        pinned={pinned}
+        variant="editar"
+        onDelete={() => setSetlistToDelete(setlist)}
+      />
     )
   }
 
@@ -121,21 +108,21 @@ export default function AdminDashboard() {
           {current && (
             <div className="space-y-2">
               <label className="field-label">Setlist actual</label>
-              <div className="space-y-2">{renderRow(current)}</div>
+              <div className="space-y-2">{renderRow(current, true)}</div>
             </div>
           )}
 
           {past.length > 0 && (
             <div className="space-y-2">
               <label className="field-label">Setlists anteriores</label>
-              <div className="space-y-2">{past.map(renderRow)}</div>
+              <div className="space-y-2">{past.map(s => renderRow(s))}</div>
             </div>
           )}
 
           {upcoming.length > 0 && (
             <div className="space-y-2">
               <label className="field-label">Setlists próximos</label>
-              <div className="space-y-2">{upcoming.map(renderRow)}</div>
+              <div className="space-y-2">{upcoming.map(s => renderRow(s))}</div>
             </div>
           )}
         </div>
