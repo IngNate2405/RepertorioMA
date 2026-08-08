@@ -7,7 +7,7 @@ import SwipeToDelete from '../../components/SwipeToDelete'
 import { listenSetlists } from '../../firebase/setlistService'
 import { listenSongs } from '../../firebase/songService'
 import { deleteSetlist } from '../../firebase/setlistMutations'
-import { nextSunday, previousSunday, formatDateIso, formatDateDMY } from '../../lib/date'
+import { nextSunday, previousSunday, sundayAfter, parseDateIso, formatDateIso, formatDateDMY } from '../../lib/date'
 import { useRole } from '../../contexts/RoleContext'
 import type { Setlist, Song } from '../../types'
 
@@ -44,6 +44,15 @@ export default function AdminDashboard() {
     () => songs.filter(s => s.timesPlayed > 0).sort((a, b) => b.timesPlayed - a.timesPlayed).slice(0, 5),
     [songs]
   )
+
+  // "Domingo siguiente" se guía por el último setlist ya creado (el que tenga
+  // la fecha más lejana), no por hoy — así, si ya existe uno para el 16, el
+  // botón ofrece el 23 en vez de repetir un domingo que ya se creó.
+  const latestSetlistDate = useMemo(
+    () => (setlists && setlists.length > 0 ? setlists.reduce((max, s) => (s.date > max ? s.date : max), setlists[0].date) : null),
+    [setlists]
+  )
+  const suggestedNextSunday = latestSetlistDate ? sundayAfter(parseDateIso(latestSetlistDate)) : nextSunday()
 
   function createForDate(d: Date) {
     setShowNewSheet(false)
@@ -163,13 +172,13 @@ export default function AdminDashboard() {
           <div className="p-4 space-y-2">
             <h2 className="text-sm font-semibold text-t1 px-1 mb-2">Nuevo setlist</h2>
             <button
-              onClick={() => createForDate(nextSunday())}
+              onClick={() => createForDate(suggestedNextSunday)}
               className="w-full flex items-center gap-3 card px-4 py-3 text-left"
             >
               <CalendarPlus size={18} className="text-accent-500" />
               <div>
                 <div className="text-sm font-medium text-t1">Domingo siguiente</div>
-                <div className="text-xs text-t3">Domingo {formatDateDMY(nextSunday())}</div>
+                <div className="text-xs text-t3">Domingo {formatDateDMY(suggestedNextSunday)}</div>
               </div>
             </button>
             <button

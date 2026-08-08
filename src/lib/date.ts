@@ -12,6 +12,19 @@ export function previousSunday(from = new Date()): Date {
   return d
 }
 
+/** Domingo siguiente a una fecha — nunca esa misma fecha, aunque ya sea domingo (avanza una semana completa). */
+export function sundayAfter(from: Date): Date {
+  const d = new Date(from)
+  d.setDate(d.getDate() + (7 - d.getDay()))
+  return d
+}
+
+/** Parsea "YYYY-MM-DD" como fecha local (evita el corrimiento de un día que da `new Date(iso)` por interpretarlo en UTC). */
+export function parseDateIso(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 /** YYYY-MM-DD en hora local (no UTC), para el input type="date". */
 export function formatDateIso(d: Date): string {
   const y = d.getFullYear()
