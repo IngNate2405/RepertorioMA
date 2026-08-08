@@ -30,6 +30,16 @@ export default function AdminDashboard() {
   useEffect(() => listenSetlists(setSetlists), [])
   useEffect(() => listenSongs(setSongs), [])
 
+  const current = useMemo(() => setlists?.find(s => s.status === 'current') ?? null, [setlists])
+  const past = useMemo(
+    () => (setlists ?? []).filter(s => s.status === 'played').sort((a, b) => b.date.localeCompare(a.date)),
+    [setlists]
+  )
+  const upcoming = useMemo(
+    () => (setlists ?? []).filter(s => s.status === 'draft').sort((a, b) => a.date.localeCompare(b.date)),
+    [setlists]
+  )
+
   const topSongs = useMemo(
     () => songs.filter(s => s.timesPlayed > 0).sort((a, b) => b.timesPlayed - a.timesPlayed).slice(0, 5),
     [songs]
@@ -38,6 +48,27 @@ export default function AdminDashboard() {
   function createForDate(d: Date) {
     setShowNewSheet(false)
     navigate('/admin/setlists/nuevo', { state: { name: `Domingo ${formatDateDMY(d)}`, date: formatDateIso(d) } })
+  }
+
+  function renderRow(setlist: Setlist) {
+    return (
+      <SwipeToDelete key={setlist.id} onDelete={() => setSetlistToDelete(setlist)}>
+        <Link to={`/admin/setlists/${setlist.id}/editar`} className="card flex items-center gap-3 px-3 py-3">
+          <div className="w-10 h-10 rounded-xl bg-accent-500/15 flex items-center justify-center shrink-0">
+            <CalendarDays size={18} className="text-accent-500" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium text-t1 truncate">{setlist.name}</div>
+            <div className="text-xs text-t3">{setlist.date} · {setlist.songs.length} canciones</div>
+          </div>
+          {setlist.status === 'current' ? (
+            <Star size={16} className="text-accent-500 shrink-0" />
+          ) : (
+            <span className="text-[10px] text-t3 shrink-0">{STATUS_LABEL[setlist.status]}</span>
+          )}
+        </Link>
+      </SwipeToDelete>
+    )
   }
 
   async function confirmDelete() {
@@ -72,9 +103,7 @@ export default function AdminDashboard() {
       }
     >
       <div className="pt-3 space-y-5 pb-6">
-        <div className="space-y-2">
-          <label className="field-label">Setlists</label>
-
+        <div className="space-y-4">
           {setlists === null && <div className="pt-2 text-center text-t3 text-sm">Cargando…</div>}
 
           {setlists !== null && setlists.length === 0 && (
@@ -87,26 +116,26 @@ export default function AdminDashboard() {
             <p className="text-[11px] text-t3 px-1">Desliza un setlist hacia la izquierda para eliminarlo.</p>
           )}
 
-          <div className="space-y-2">
-            {setlists?.map(setlist => (
-              <SwipeToDelete key={setlist.id} onDelete={() => setSetlistToDelete(setlist)}>
-                <Link to={`/admin/setlists/${setlist.id}/editar`} className="card flex items-center gap-3 px-3 py-3">
-                  <div className="w-10 h-10 rounded-xl bg-accent-500/15 flex items-center justify-center shrink-0">
-                    <CalendarDays size={18} className="text-accent-500" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-t1 truncate">{setlist.name}</div>
-                    <div className="text-xs text-t3">{setlist.date} · {setlist.songs.length} canciones</div>
-                  </div>
-                  {setlist.status === 'current' ? (
-                    <Star size={16} className="text-accent-500 shrink-0" />
-                  ) : (
-                    <span className="text-[10px] text-t3 shrink-0">{STATUS_LABEL[setlist.status]}</span>
-                  )}
-                </Link>
-              </SwipeToDelete>
-            ))}
-          </div>
+          {current && (
+            <div className="space-y-2">
+              <label className="field-label">Setlist actual</label>
+              <div className="space-y-2">{renderRow(current)}</div>
+            </div>
+          )}
+
+          {past.length > 0 && (
+            <div className="space-y-2">
+              <label className="field-label">Setlists anteriores</label>
+              <div className="space-y-2">{past.map(renderRow)}</div>
+            </div>
+          )}
+
+          {upcoming.length > 0 && (
+            <div className="space-y-2">
+              <label className="field-label">Setlists próximos</label>
+              <div className="space-y-2">{upcoming.map(renderRow)}</div>
+            </div>
+          )}
         </div>
 
         {topSongs.length > 0 && (
