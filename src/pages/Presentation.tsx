@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { CaseUpper, ChevronLeft, ChevronRight, Eye, EyeOff, WifiOff, X } from 'lucide-react'
+import { CaseUpper, ChevronLeft, ChevronRight, Eye, EyeOff, Minus, Plus, WifiOff, X } from 'lucide-react'
 import ChordProView from '../components/ChordProView'
 import { listenSetlist } from '../firebase/setlistService'
 import { listenSongs } from '../firebase/songService'
@@ -8,6 +8,7 @@ import { useHideChords } from '../hooks/useHideChords'
 import { useUppercase } from '../hooks/useUppercase'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useWakeLock } from '../hooks/useWakeLock'
+import { useTextScale, TEXT_SCALE_MIN, TEXT_SCALE_MAX } from '../hooks/useTextScale'
 import type { Setlist, Song } from '../types'
 
 export default function Presentation() {
@@ -20,6 +21,7 @@ export default function Presentation() {
   const [index, setIndex] = useState(typeof initialIndex === 'number' ? initialIndex : 0)
   const [hideChords, setHideChords] = useHideChords()
   const [uppercase, setUppercase] = useUppercase()
+  const { scale: textScale, increase: increaseText, decrease: decreaseText } = useTextScale()
   const online = useOnlineStatus()
   useWakeLock(true)
 
@@ -87,9 +89,28 @@ export default function Presentation() {
           >
             {hideChords ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
+          <div className="flex items-center rounded-full bg-s2 border border-br overflow-hidden">
+            <button
+              onClick={decreaseText}
+              disabled={textScale <= TEXT_SCALE_MIN}
+              className="w-8 h-9 flex items-center justify-center disabled:opacity-30"
+              aria-label="Reducir letra"
+            >
+              <Minus size={14} />
+            </button>
+            <div className="w-px h-5 bg-br" />
+            <button
+              onClick={increaseText}
+              disabled={textScale >= TEXT_SCALE_MAX}
+              className="w-8 h-9 flex items-center justify-center disabled:opacity-30"
+              aria-label="Agrandar letra"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
         </div>
         <div className="text-center min-w-0 px-2">
-          <div className="text-sm font-semibold truncate max-w-[220px]">{song?.title ?? setlist?.name ?? ''}</div>
+          <div className="text-sm font-semibold truncate max-w-[140px] mx-auto">{song?.title ?? setlist?.name ?? ''}</div>
           <div className="flex items-center justify-center gap-1 text-[11px] text-t3">
             {entries.length > 0 && <span>{index + 1} / {entries.length}</span>}
             {!online && <WifiOff size={10} />}
@@ -125,6 +146,7 @@ export default function Presentation() {
               hideChords={hideChords}
               uppercase={uppercase}
               size="large"
+              userScale={textScale}
             />
           </div>
         )}
