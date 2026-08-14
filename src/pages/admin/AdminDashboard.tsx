@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { CalendarPlus, History, Pencil, Plus, Settings, TrendingUp, TriangleAlert } from 'lucide-react'
+import { CalendarPlus, ChevronRight, History, Pencil, Plus, Settings, TrendingUp, TriangleAlert } from 'lucide-react'
 import Layout from '../../components/layout/Layout'
 import BottomSheet from '../../components/ui/BottomSheet'
 import SetlistRow from '../../components/SetlistRow'
@@ -21,6 +21,8 @@ export default function AdminDashboard() {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [showNewSheet, setShowNewSheet] = useState(false)
+  const [showPast, setShowPast] = useState(false)
+  const [showUpcoming, setShowUpcoming] = useState(false)
 
   useEffect(() => listenSetlists(setSetlists), [])
   useEffect(() => listenSongs(setSongs), [])
@@ -114,15 +116,27 @@ export default function AdminDashboard() {
 
           {past.length > 0 && (
             <div className="space-y-2">
-              <label className="field-label">Setlists anteriores</label>
-              <div className="space-y-2">{past.map(s => renderRow(s))}</div>
+              <button
+                onClick={() => setShowPast(v => !v)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-t3 uppercase tracking-wide px-1"
+              >
+                <ChevronRight size={12} className={`transition-transform ${showPast ? 'rotate-90' : ''}`} />
+                Setlists anteriores ({past.length})
+              </button>
+              {showPast && <div className="space-y-2">{past.map(s => renderRow(s))}</div>}
             </div>
           )}
 
           {upcoming.length > 0 && (
             <div className="space-y-2">
-              <label className="field-label">Setlists próximos</label>
-              <div className="space-y-2">{upcoming.map(s => renderRow(s))}</div>
+              <button
+                onClick={() => setShowUpcoming(v => !v)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-t3 uppercase tracking-wide px-1"
+              >
+                <ChevronRight size={12} className={`transition-transform ${showUpcoming ? 'rotate-90' : ''}`} />
+                Setlists próximos ({upcoming.length})
+              </button>
+              {showUpcoming && <div className="space-y-2">{upcoming.map(s => renderRow(s))}</div>}
             </div>
           )}
         </div>
