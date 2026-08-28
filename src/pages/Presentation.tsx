@@ -4,17 +4,21 @@ import { CaseUpper, ChevronLeft, ChevronRight, Eye, EyeOff, Minus, Plus, WifiOff
 import ChordProView from '../components/ChordProView'
 import { listenSetlist } from '../firebase/setlistService'
 import { listenSongs } from '../firebase/songService'
+import { saveSetlist } from '../firebase/setlistMutations'
+import { transposeChord } from '../lib/chordpro'
 import { useHideChords } from '../hooks/useHideChords'
 import { useUppercase } from '../hooks/useUppercase'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useWakeLock } from '../hooks/useWakeLock'
 import { useTextScale, TEXT_SCALE_MIN, TEXT_SCALE_MAX } from '../hooks/useTextScale'
+import { useRole } from '../contexts/RoleContext'
 import type { Setlist, Song } from '../types'
 
 export default function Presentation() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
+  const { role, pin } = useRole()
   const [setlist, setSetlist] = useState<Setlist | null | undefined>(undefined)
   const [allSongs, setAllSongs] = useState<Song[]>([])
   const initialIndex = (location.state as { index?: number } | null)?.index
@@ -22,6 +26,7 @@ export default function Presentation() {
   const [hideChords, setHideChords] = useHideChords()
   const [uppercase, setUppercase] = useUppercase()
   const { scale: textScale, increase: increaseText, decrease: decreaseText } = useTextScale()
+  const [savingKey, setSavingKey] = useState(false)
   const online = useOnlineStatus()
   useWakeLock(true)
 
@@ -35,6 +40,24 @@ export default function Presentation() {
   const entries = setlist?.songs ?? []
   const entry = entries[index]
   const song = entry ? songMap.get(entry.songId) : undefined
+  const displayKey = song ? transposeChord(song.originalKey, entry?.keyOverrideSemitones ?? 0) : '?'
+
+  // Ajuste de tono solo para admin, solo para este setlist (nunca toca la
+  // canción "maestra") — se guarda al toque para que quede listo la próxima
+  // vez que se abra este mismo setlist, sin tener que pasar por Editar.
+  async function adjustKey(delta: number) {
+    if (!pin || !setlist || !entry) return
+    setSavingKey(true)
+    try {
+      const nextSemitones = (entry.keyOverrideSemitones ?? 0) + delta
+      const nextSongs = entries.map((e, i) =>
+        i === index ? (nextSemitones === 0 ? { songId: e.songId } : { songId: e.songId, keyOverrideSemitones: nextSemitones }) : e
+      )
+      await saveSetlist(pin, { id: setlist.id, name: setlist.name, date: setlist.date, songs: nextSongs })
+    } finally {
+      setSavingKey(false)
+    }
+  }
 
   // Navegación en loop: pasada la última canción vuelve a la primera, y viceversa.
   function goTo(next: number) {
@@ -115,6 +138,27 @@ export default function Presentation() {
             {entries.length > 0 && <span>{index + 1} / {entries.length}</span>}
             {!online && <WifiOff size={10} />}
           </div>
+          {role === 'admin' && song && (
+            <div className="flex items-center justify-center gap-1.5 mt-1">
+              <button
+                onClick={() => adjustKey(-1)}
+                disabled={savingKey}
+                className="w-5 h-5 rounded-md bg-s2 border border-br flex items-center justify-center disabled:opacity-40"
+                aria-label="Bajar tono (solo este setlist)"
+              >
+                <Minus size={10} />
+              </button>
+              <span className="text-[11px] font-semibold text-accent-500 w-6 text-center">{displayKey}</span>
+              <button
+                onClick={() => adjustKey(1)}
+                disabled={savingKey}
+                className="w-5 h-5 rounded-md bg-s2 border border-br flex items-center justify-center disabled:opacity-40"
+                aria-label="Subir tono (solo este setlist)"
+              >
+                <Plus size={10} />
+              </button>
+            </div>
+          )}
         </div>
         <button
           onClick={() => navigate(-1)}
