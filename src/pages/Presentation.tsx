@@ -11,6 +11,7 @@ import { useUppercase } from '../hooks/useUppercase'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useWakeLock } from '../hooks/useWakeLock'
 import { useTextScale, TEXT_SCALE_MIN, TEXT_SCALE_MAX } from '../hooks/useTextScale'
+import { useLocalKeyAdjust } from '../hooks/useLocalKeyAdjust'
 import { useRole } from '../contexts/RoleContext'
 import type { Setlist, Song } from '../types'
 
@@ -40,16 +41,24 @@ export default function Presentation() {
   const entries = setlist?.songs ?? []
   const entry = entries[index]
   const song = entry ? songMap.get(entry.songId) : undefined
-  const displayKey = song ? transposeChord(song.originalKey, entry?.keyOverrideSemitones ?? 0) : '?'
+  const isAdmin = role === 'admin'
 
-  // Ajuste de tono solo para admin, solo para este setlist (nunca toca la
-  // canción "maestra") — se guarda al toque para que quede listo la próxima
-  // vez que se abra este mismo setlist, sin tener que pasar por Editar.
-  async function adjustKey(delta: number) {
+  // Ajuste personal (solo este teléfono) sobre el tono del setlist — cualquiera
+  // puede usarlo para sí mismo sin afectar a los demás. Se suma encima de lo
+  // que haya fijado el admin (que sí es compartido).
+  const { delta: localDelta, increase: increaseLocalKey, decrease: decreaseLocalKey } = useLocalKeyAdjust(setlist?.id, entry?.songId)
+  const baseSemitones = entry?.keyOverrideSemitones ?? 0
+  const effectiveSemitones = baseSemitones + (isAdmin ? 0 : localDelta)
+  const displayKey = song ? transposeChord(song.originalKey, effectiveSemitones) : '?'
+
+  // Ajuste de tono para admin: compartido, guardado en el setlist (nunca toca
+  // la canción "maestra") — se guarda al toque para que quede listo la
+  // próxima vez que se abra este mismo setlist, sin tener que pasar por Editar.
+  async function adjustSharedKey(delta: number) {
     if (!pin || !setlist || !entry) return
     setSavingKey(true)
     try {
-      const nextSemitones = (entry.keyOverrideSemitones ?? 0) + delta
+      const nextSemitones = baseSemitones + delta
       const nextSongs = entries.map((e, i) =>
         i === index ? (nextSemitones === 0 ? { songId: e.songId } : { songId: e.songId, keyOverrideSemitones: nextSemitones }) : e
       )
@@ -57,6 +66,12 @@ export default function Presentation() {
     } finally {
       setSavingKey(false)
     }
+  }
+
+  function adjustKey(delta: number) {
+    if (isAdmin) adjustSharedKey(delta)
+    else if (delta < 0) decreaseLocalKey()
+    else increaseLocalKey()
   }
 
   // Navegación en loop: pasada la última canción vuelve a la primera, y viceversa.
@@ -138,13 +153,13 @@ export default function Presentation() {
             {entries.length > 0 && <span>{index + 1} / {entries.length}</span>}
             {!online && <WifiOff size={10} />}
           </div>
-          {role === 'admin' && song && (
+          {song && (
             <div className="flex items-center justify-center gap-1.5 mt-1">
               <button
                 onClick={() => adjustKey(-1)}
                 disabled={savingKey}
                 className="w-5 h-5 rounded-md bg-s2 border border-br flex items-center justify-center disabled:opacity-40"
-                aria-label="Bajar tono (solo este setlist)"
+                aria-label={isAdmin ? 'Bajar tono (para todos)' : 'Bajar tono (solo en tu teléfono)'}
               >
                 <Minus size={10} />
               </button>
@@ -153,7 +168,7 @@ export default function Presentation() {
                 onClick={() => adjustKey(1)}
                 disabled={savingKey}
                 className="w-5 h-5 rounded-md bg-s2 border border-br flex items-center justify-center disabled:opacity-40"
-                aria-label="Subir tono (solo este setlist)"
+                aria-label={isAdmin ? 'Subir tono (para todos)' : 'Subir tono (solo en tu teléfono)'}
               >
                 <Plus size={10} />
               </button>
@@ -186,7 +201,7 @@ export default function Presentation() {
           <div className="h-full overflow-y-auto px-5 py-4">
             <ChordProView
               chordProText={song.chordProText}
-              transposeSemitones={entry?.keyOverrideSemitones ?? 0}
+              transposeSemitones={effectiveSemitones}
               hideChords={hideChords}
               uppercase={uppercase}
               size="large"
