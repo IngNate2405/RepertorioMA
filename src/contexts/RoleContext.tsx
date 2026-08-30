@@ -2,6 +2,9 @@ import { createContext, useContext, useState, type ReactNode } from 'react'
 
 export type Role = 'user' | 'admin' | null
 
+// localStorage (no sessionStorage) a propósito — la sesión debe sobrevivir a
+// cerrar y reabrir la app (PWA), no solo mientras la pestaña siga abierta.
+// Se limpia únicamente con logout().
 const STORAGE_KEY = 'repertorio_role'
 const PIN_STORAGE_KEY = 'repertorio_pin'
 
@@ -17,10 +20,10 @@ const RoleContext = createContext<RoleContextValue | null>(null)
 
 export function RoleProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<Role>(() => {
-    const stored = sessionStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(STORAGE_KEY)
     return stored === 'admin' || stored === 'user' ? stored : null
   })
-  const [pin, setPin] = useState<string | null>(() => sessionStorage.getItem(PIN_STORAGE_KEY))
+  const [pin, setPin] = useState<string | null>(() => localStorage.getItem(PIN_STORAGE_KEY))
 
   async function login(candidatePin: string): Promise<Role> {
     const res = await fetch('/api/verify-pin', {
@@ -31,10 +34,10 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     if (!res.ok) throw new Error('No se pudo verificar el PIN')
     const data = (await res.json()) as { role: Role }
     if (data.role) {
-      sessionStorage.setItem(STORAGE_KEY, data.role)
+      localStorage.setItem(STORAGE_KEY, data.role)
       setRole(data.role)
       if (data.role === 'admin') {
-        sessionStorage.setItem(PIN_STORAGE_KEY, candidatePin)
+        localStorage.setItem(PIN_STORAGE_KEY, candidatePin)
         setPin(candidatePin)
       }
     }
@@ -42,8 +45,8 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   }
 
   function logout() {
-    sessionStorage.removeItem(STORAGE_KEY)
-    sessionStorage.removeItem(PIN_STORAGE_KEY)
+    localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(PIN_STORAGE_KEY)
     setRole(null)
     setPin(null)
   }
