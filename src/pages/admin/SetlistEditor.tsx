@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Check, GripVertical, Minus, Plus, Search, Star, Trash2 } from 'lucide-react'
+import { Check, GripVertical, Minus, Plus, Search, Star, Trash2, X } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent,
 } from '@dnd-kit/core'
@@ -8,7 +9,6 @@ import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } 
 import { CSS } from '@dnd-kit/utilities'
 import Layout from '../../components/layout/Layout'
 import BackButton from '../../components/layout/BackButton'
-import BottomSheet from '../../components/ui/BottomSheet'
 import { listenSetlist } from '../../firebase/setlistService'
 import { listenSongs } from '../../firebase/songService'
 import { saveSetlist, markSetlistCurrent, markSetlistPlayed } from '../../firebase/setlistMutations'
@@ -77,6 +77,15 @@ export default function SetlistEditor() {
   const [error, setError] = useState('')
 
   useEffect(() => listenSongs(setAllSongs), [])
+
+  // El buscador de canciones es una pantalla completa propia (no un BottomSheet) —
+  // bloquea el scroll de fondo mientras está abierta, igual que hacía el sheet.
+  useEffect(() => {
+    if (!showPicker) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [showPicker])
 
   useEffect(() => {
     if (!id) return
@@ -258,11 +267,20 @@ export default function SetlistEditor() {
         </button>
       </div>
 
-      {showPicker && (
-        <BottomSheet onClose={() => setShowPicker(false)}>
-          <div className="p-4 space-y-3 max-h-[70dvh] flex flex-col">
-            <h2 className="text-sm font-semibold text-t1">Agregar canción</h2>
-            <div className="relative shrink-0">
+      {showPicker && createPortal(
+        <div className="fixed inset-0 z-[100] bg-bg flex flex-col">
+          <div
+            className="flex items-center gap-2 px-4 pb-3 shrink-0 border-b border-br2"
+            style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
+          >
+            <button
+              onClick={() => setShowPicker(false)}
+              className="w-9 h-9 rounded-full bg-s2 border border-br flex items-center justify-center shrink-0"
+              aria-label="Cerrar"
+            >
+              <X size={18} />
+            </button>
+            <div className="relative flex-1">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-t4" />
               <input
                 autoFocus
@@ -272,21 +290,22 @@ export default function SetlistEditor() {
                 onChange={e => setPickerSearch(e.target.value)}
               />
             </div>
-            <div className="overflow-y-auto space-y-1.5">
-              {pickerResults.length === 0 && <p className="text-xs text-t3 text-center py-4">Sin resultados</p>}
-              {pickerResults.map(song => (
-                <button
-                  key={song.id}
-                  onClick={() => addSong(song.id)}
-                  className="w-full text-left px-3 py-2.5 rounded-xl bg-s2 text-sm text-t1"
-                >
-                  {song.title}
-                  <span className="text-t3 text-xs ml-2">{song.originalKey}</span>
-                </button>
-              ))}
-            </div>
           </div>
-        </BottomSheet>
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1.5">
+            {pickerResults.length === 0 && <p className="text-xs text-t3 text-center py-4">Sin resultados</p>}
+            {pickerResults.map(song => (
+              <button
+                key={song.id}
+                onClick={() => addSong(song.id)}
+                className="w-full text-left px-3 py-2.5 rounded-xl bg-s2 text-sm text-t1"
+              >
+                {song.title}
+                <span className="text-t3 text-xs ml-2">{song.originalKey}</span>
+              </button>
+            ))}
+          </div>
+        </div>,
+        document.body
       )}
     </Layout>
   )
