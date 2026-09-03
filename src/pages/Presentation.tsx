@@ -81,23 +81,48 @@ export default function Presentation() {
   }
 
   // Flechas ocultas por defecto (a veces tapaban la letra al leer quieto) —
-  // aparecen mientras se hace scroll y se ocultan de nuevo poco después de
-  // parar. El swipe para cambiar de canción no depende de esto en absoluto,
-  // sigue funcionando estén visibles o no.
+  // aparecen mientras se hace scroll (o con un tap en la pantalla, útil en
+  // canciones cortas que no necesitan scroll) y se ocultan de nuevo poco
+  // después. El swipe para cambiar de canción no depende de esto en
+  // absoluto, sigue funcionando estén visibles o no.
   const [showNav, setShowNav] = useState(false)
+  const showNavRef = useRef(showNav)
+  showNavRef.current = showNav
   const hideNavTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  function handleContentScroll() {
+  function clearHideNavTimer() {
+    if (hideNavTimer.current) {
+      clearTimeout(hideNavTimer.current)
+      hideNavTimer.current = null
+    }
+  }
+
+  function revealNav() {
     setShowNav(true)
-    if (hideNavTimer.current) clearTimeout(hideNavTimer.current)
+    clearHideNavTimer()
     hideNavTimer.current = setTimeout(() => setShowNav(false), 700)
   }
 
+  function hideNavNow() {
+    clearHideNavTimer()
+    setShowNav(false)
+  }
+
+  function handleContentScroll() {
+    revealNav()
+  }
+
+  function toggleNav() {
+    if (showNavRef.current) hideNavNow()
+    else revealNav()
+  }
+
   useEffect(() => {
-    return () => { if (hideNavTimer.current) clearTimeout(hideNavTimer.current) }
+    return () => clearHideNavTimer()
   }, [])
 
   const SWIPE_THRESHOLD = 60
+  const TAP_THRESHOLD = 10
   const dragStart = useRef<{ x: number; y: number } | null>(null)
 
   function handlePointerDown(e: PointerEvent) {
@@ -110,8 +135,19 @@ export default function Presentation() {
     if (!start) return
     const deltaX = e.clientX - start.x
     const deltaY = e.clientY - start.y
+
     if (Math.abs(deltaX) > SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
       goTo(deltaX < 0 ? index + 1 : index - 1)
+      return
+    }
+
+    // Un tap real (el dedo casi no se movió) — no uno de scroll a medias, que
+    // ya maneja handleContentScroll por su cuenta. Si el tap fue sobre uno de
+    // los botones (flechas, etc.) esos ya tienen su propio onClick, no hace
+    // falta alternar nada más.
+    const isTap = Math.abs(deltaX) < TAP_THRESHOLD && Math.abs(deltaY) < TAP_THRESHOLD
+    if (isTap && !(e.target as HTMLElement).closest('button')) {
+      toggleNav()
     }
   }
 
