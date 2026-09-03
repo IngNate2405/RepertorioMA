@@ -212,19 +212,23 @@ export default function Presentation() {
 
         {entries.length > 1 && (
           <>
+            {/* Botones chicos y fijos en vez de zonas invisibles a todo lo alto —
+                esas zonas (25% del ancho, toda la altura) tapaban el área
+                scrolleable de la letra: si el gesto de scroll empezaba ahí, nunca
+                llegaba al contenido y no se movía nada. */}
             <button
               onClick={() => goTo(index - 1)}
-              className="absolute left-0 top-0 bottom-0 w-1/4 flex items-center justify-start pl-1"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-s2 border border-br flex items-center justify-center shadow-md"
               aria-label="Anterior"
             >
-              <ChevronLeft size={22} className="text-t3" />
+              <ChevronLeft size={20} className="text-t2" />
             </button>
             <button
               onClick={() => goTo(index + 1)}
-              className="absolute right-0 top-0 bottom-0 w-1/4 flex items-center justify-end pr-1"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-s2 border border-br flex items-center justify-center shadow-md"
               aria-label="Siguiente"
             >
-              <ChevronRight size={22} className="text-t3" />
+              <ChevronRight size={20} className="text-t2" />
             </button>
           </>
         )}
