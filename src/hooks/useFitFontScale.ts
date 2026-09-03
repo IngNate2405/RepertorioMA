@@ -21,11 +21,21 @@ export function useFitFontScale(containerRef: RefObject<HTMLElement | null>, ent
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const entriesRef = useRef(entries)
   entriesRef.current = entries
+  const lastWidthRef = useRef<number | null>(null)
 
-  const recompute = useCallback(() => {
+  const recompute = useCallback((opts?: { force?: boolean }) => {
     const container = containerRef.current
     if (!container) return
     const width = container.clientWidth
+    // El ResizeObserver dispara ante CUALQUIER cambio de tamaño, incluido
+    // solo de alto — en el celular, hacer scroll puede colapsar/expandir la
+    // barra de direcciones y disparar esto de nuevo y de nuevo durante el
+    // gesto. El cálculo solo depende del ANCHO, así que si no cambió no hay
+    // nada que recalcular — evita medir texto en canvas (caro) en cada tick
+    // de scroll, que es justo lo que hacía sentir el scroll pesado.
+    if (!opts?.force && width === lastWidthRef.current) return
+    lastWidthRef.current = width
+
     const currentEntries = entriesRef.current
     if (!width || currentEntries.length === 0) {
       setScale(1)
@@ -58,13 +68,13 @@ export function useFitFontScale(containerRef: RefObject<HTMLElement | null>, ent
   }, [containerRef])
 
   useLayoutEffect(() => {
-    recompute()
+    recompute({ force: true })
   }, [entries, recompute])
 
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
-    const observer = new ResizeObserver(recompute)
+    const observer = new ResizeObserver(() => recompute())
     observer.observe(container)
     return () => observer.disconnect()
   }, [containerRef, recompute])
