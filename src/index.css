@@ -17,7 +17,9 @@
   --input-bg:     #f3e9d2;
   --input-border: #e0d2ac;
   --nav-bg:       rgba(255,255,255,0.92);
-  --shadow:       0 2px 16px rgba(36,29,18,0.10);
+  /* Sombra en dos capas (ambiente + directa) — más suave y con más profundidad
+     que una sola sombra plana, look más nativo/iOS. */
+  --shadow: 0 1px 2px rgba(36,29,18,0.05), 0 8px 20px -4px rgba(36,29,18,0.10);
 }
 
 .dark {
@@ -36,7 +38,7 @@
   --input-bg:     #241d14;
   --input-border: #3a2f1f;
   --nav-bg:       rgba(20,17,12,0.93);
-  --shadow:       0 4px 28px rgba(0,0,0,0.6);
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 28px -4px rgba(0,0,0,0.55);
 }
 
 /* Exponer como colores Tailwind */
@@ -78,10 +80,18 @@ html, body, #root {
 }
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Figtree', system-ui, -apple-system, sans-serif;
   background-color: var(--bg);
   color: var(--t1);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Fuente de título — un poco más geométrica/con carácter, solo para
+   encabezados reales (h1/h2), no para el texto normal ni la letra/acordes
+   (esos siguen en Figtree y monoespaciada respectivamente). */
+h1, h2 {
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 #root {
