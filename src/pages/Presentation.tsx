@@ -80,6 +80,23 @@ export default function Presentation() {
     setIndex(((next % entries.length) + entries.length) % entries.length)
   }
 
+  // Flechas ocultas por defecto (a veces tapaban la letra al leer quieto) —
+  // aparecen mientras se hace scroll y se ocultan de nuevo poco después de
+  // parar. El swipe para cambiar de canción no depende de esto en absoluto,
+  // sigue funcionando estén visibles o no.
+  const [showNav, setShowNav] = useState(false)
+  const hideNavTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function handleContentScroll() {
+    setShowNav(true)
+    if (hideNavTimer.current) clearTimeout(hideNavTimer.current)
+    hideNavTimer.current = setTimeout(() => setShowNav(false), 700)
+  }
+
+  useEffect(() => {
+    return () => { if (hideNavTimer.current) clearTimeout(hideNavTimer.current) }
+  }, [])
+
   const SWIPE_THRESHOLD = 60
   const dragStart = useRef<{ x: number; y: number } | null>(null)
 
@@ -198,7 +215,7 @@ export default function Presentation() {
         )}
 
         {song && (
-          <div className="h-full overflow-y-auto px-5 py-4">
+          <div className="h-full overflow-y-auto px-5 py-4" onScroll={handleContentScroll}>
             <ChordProView
               chordProText={song.chordProText}
               transposeSemitones={effectiveSemitones}
@@ -218,14 +235,14 @@ export default function Presentation() {
                 llegaba al contenido y no se movía nada. */}
             <button
               onClick={() => goTo(index - 1)}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-s2 border border-br flex items-center justify-center shadow-md"
+              className={`absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-s2 border border-br flex items-center justify-center shadow-md transition-opacity duration-300 ${showNav ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
               aria-label="Anterior"
             >
               <ChevronLeft size={20} className="text-t2" />
             </button>
             <button
               onClick={() => goTo(index + 1)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-s2 border border-br flex items-center justify-center shadow-md"
+              className={`absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-s2 border border-br flex items-center justify-center shadow-md transition-opacity duration-300 ${showNav ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
               aria-label="Siguiente"
             >
               <ChevronRight size={20} className="text-t2" />
