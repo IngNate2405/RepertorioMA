@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { CaseUpper, ChevronLeft, ChevronRight, Eye, EyeOff, Minus, Plus, WifiOff, X } from 'lucide-react'
+import { CaseUpper, ChevronLeft, ChevronRight, EyeOff, Guitar, Minus, Plus, WifiOff } from 'lucide-react'
 import ChordProView from '../components/ChordProView'
 import { listenSetlist } from '../firebase/setlistService'
 import { listenSongs } from '../firebase/songService'
@@ -162,80 +162,101 @@ export default function Presentation() {
   return (
     <div className="fixed inset-0 bg-bg text-t1 flex flex-col z-[200]">
       <div
-        className="flex items-center justify-between px-4 shrink-0"
-        style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))', paddingBottom: '0.75rem' }}
+        className="shrink-0 px-5"
+        style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))', paddingBottom: '0.75rem' }}
       >
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-between mb-3">
           <button
-            onClick={() => setUppercase(!uppercase)}
-            className={`w-9 h-9 rounded-full border flex items-center justify-center ${uppercase ? 'bg-accent-500/15 border-accent-500/40 text-accent-500' : 'bg-s2 border-br'}`}
-            aria-label={uppercase ? 'Ver letra original' : 'Ver letra en mayúsculas'}
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-0.5 text-t2 text-sm font-medium -ml-1.5 pl-1.5 pr-2 py-1"
+            aria-label="Salir"
           >
-            <CaseUpper size={16} />
+            <ChevronLeft size={20} />
+            Repertorio
           </button>
-          <button
-            onClick={() => setHideChords(!hideChords)}
-            className="w-9 h-9 rounded-full bg-s2 border border-br flex items-center justify-center"
-            aria-label={hideChords ? 'Mostrar acordes' : 'Ocultar acordes'}
-          >
-            {hideChords ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-          <div className="flex items-center rounded-full bg-s2 border border-br overflow-hidden">
+          <div className="flex items-center gap-2">
+            {!online && <WifiOff size={14} className="text-t3" aria-label="Sin conexión" />}
             <button
-              onClick={decreaseText}
-              disabled={textScale <= TEXT_SCALE_MIN}
-              className="w-8 h-9 flex items-center justify-center disabled:opacity-30"
-              aria-label="Reducir letra"
+              onClick={() => setUppercase(!uppercase)}
+              className={`w-8 h-8 rounded-full border flex items-center justify-center ${uppercase ? 'bg-accent-500/15 border-accent-500/40 text-accent-500' : 'bg-s2 border-br text-t2'}`}
+              aria-label={uppercase ? 'Ver letra original' : 'Ver letra en mayúsculas'}
             >
-              <Minus size={14} />
-            </button>
-            <div className="w-px h-5 bg-br" />
-            <button
-              onClick={increaseText}
-              disabled={textScale >= TEXT_SCALE_MAX}
-              className="w-8 h-9 flex items-center justify-center disabled:opacity-30"
-              aria-label="Agrandar letra"
-            >
-              <Plus size={14} />
+              <CaseUpper size={15} />
             </button>
           </div>
         </div>
-        <div className="text-center min-w-0 px-2">
-          <div className="text-sm font-semibold truncate max-w-[140px] mx-auto">{song?.title ?? setlist?.name ?? ''}</div>
-          <div className="flex items-center justify-center gap-1 text-[11px] text-t3">
-            {entries.length > 0 && <span>{index + 1} / {entries.length}</span>}
-            {!online && <WifiOff size={10} />}
+
+        <div className="mb-3 min-w-0">
+          <h1 className="text-2xl font-bold text-t1 truncate">{song?.title ?? setlist?.name ?? ''}</h1>
+          <div className="text-[11px] font-semibold text-t3 uppercase tracking-wide mt-0.5 truncate">
+            {song?.artist || (entries.length > 0 ? `Canción ${index + 1} de ${entries.length}` : '')}
           </div>
-          {song && (
-            <div className="flex items-center justify-center gap-1.5 mt-1">
+        </div>
+
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex-1 rounded-xl bg-s2 border border-br px-3 py-1.5 flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-t3 uppercase tracking-wide">Tono</span>
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => adjustKey(-1)}
                 disabled={savingKey}
-                className="w-5 h-5 rounded-md bg-s2 border border-br flex items-center justify-center disabled:opacity-40"
+                className="w-6 h-6 rounded-full bg-s1 border border-br flex items-center justify-center disabled:opacity-40"
                 aria-label={isAdmin ? 'Bajar tono (para todos)' : 'Bajar tono (solo en tu teléfono)'}
               >
-                <Minus size={10} />
+                <Minus size={11} />
               </button>
-              <span className="text-[11px] font-semibold text-accent-500 w-6 text-center">{displayKey}</span>
+              <span className="text-sm font-bold text-accent-500 w-5 text-center">{displayKey}</span>
               <button
                 onClick={() => adjustKey(1)}
                 disabled={savingKey}
-                className="w-5 h-5 rounded-md bg-s2 border border-br flex items-center justify-center disabled:opacity-40"
+                className="w-6 h-6 rounded-full bg-s1 border border-br flex items-center justify-center disabled:opacity-40"
                 aria-label={isAdmin ? 'Subir tono (para todos)' : 'Subir tono (solo en tu teléfono)'}
               >
-                <Plus size={10} />
+                <Plus size={11} />
               </button>
             </div>
-          )}
+          </div>
+          <div className="flex-1 rounded-xl bg-s2 border border-br px-3 py-1.5 flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-t3 uppercase tracking-wide">Letra</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={decreaseText}
+                disabled={textScale <= TEXT_SCALE_MIN}
+                className="w-6 h-6 rounded-full bg-s1 border border-br flex items-center justify-center disabled:opacity-40"
+                aria-label="Reducir letra"
+              >
+                <Minus size={11} />
+              </button>
+              <span className="text-xs font-bold text-t1">Aa</span>
+              <button
+                onClick={increaseText}
+                disabled={textScale >= TEXT_SCALE_MAX}
+                className="w-6 h-6 rounded-full bg-s1 border border-br flex items-center justify-center disabled:opacity-40"
+                aria-label="Agrandar letra"
+              >
+                <Plus size={11} />
+              </button>
+            </div>
+          </div>
         </div>
-        <button
-          onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-full bg-s2 border border-br flex items-center justify-center"
-          aria-label="Salir"
-        >
-          <X size={18} />
-        </button>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => setHideChords(false)}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl py-1.5 text-xs font-semibold border ${!hideChords ? 'bg-accent-500/15 border-accent-500 text-accent-500' : 'bg-s2 border-br text-t2'}`}
+          >
+            <Guitar size={14} /> Mostrar notas
+          </button>
+          <button
+            onClick={() => setHideChords(true)}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl py-1.5 text-xs font-semibold border ${hideChords ? 'bg-accent-500/15 border-accent-500 text-accent-500' : 'bg-s2 border-br text-t2'}`}
+          >
+            <EyeOff size={14} /> Solo letra
+          </button>
+        </div>
       </div>
+
+      <div className="border-t border-br2 shrink-0" />
 
       <div
         className="flex-1 relative overflow-hidden"
