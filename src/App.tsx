@@ -36,6 +36,7 @@ const SongEditor = lazyWithReload(() => import('./pages/admin/SongEditor'))
 const ScanSong = lazyWithReload(() => import('./pages/admin/ScanSong'))
 const SetlistEditor = lazyWithReload(() => import('./pages/admin/SetlistEditor'))
 const AdminSettings = lazyWithReload(() => import('./pages/admin/AdminSettings'))
+const PlayedSongs = lazyWithReload(() => import('./pages/admin/PlayedSongs'))
 
 function RequireRole({ children, admin }: { children: ReactNode; admin?: boolean }) {
   const { role } = useRole()
@@ -85,6 +86,7 @@ export default function App() {
         <Route path="/admin/setlists/nuevo" element={<LazyAdmin><SetlistEditor /></LazyAdmin>} />
         <Route path="/admin/setlists/:id/editar" element={<LazyAdmin><SetlistEditor /></LazyAdmin>} />
         <Route path="/admin/configuracion" element={<LazyAdmin><AdminSettings /></LazyAdmin>} />
+        <Route path="/admin/canciones-tocadas" element={<LazyAdmin><PlayedSongs /></LazyAdmin>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

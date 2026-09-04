@@ -143,7 +143,12 @@ export default function AdminDashboard() {
 
         {topSongs.length > 0 && (
           <div className="space-y-2">
-            <label className="field-label">Canciones más tocadas</label>
+            <div className="flex items-center justify-between">
+              <label className="field-label">Canciones más tocadas</label>
+              <Link to="/admin/canciones-tocadas" className="text-xs text-accent-500 font-medium">
+                Ver todas
+              </Link>
+            </div>
             <div className="card divide-y divide-br">
               {topSongs.map((song, i) => (
                 <Link key={song.id} to={`/canciones/${song.id}`} className="flex items-center gap-3 px-3 py-2.5">
